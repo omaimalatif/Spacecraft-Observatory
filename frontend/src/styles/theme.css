@@ -174,8 +174,9 @@ nav.portal-nav a:hover{color:var(--gold-light);background:var(--glass-2);}
 .portal-card:nth-child(1){grid-row:span 2;min-height:440px;}
 .portal-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
 .portal-num{font-family:'JetBrains Mono';font-size:11.5px;color:var(--text-faint);}
-.portal-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;
-  background:color-mix(in srgb, var(--pc) 20%, transparent);border:1px solid color-mix(in srgb, var(--pc) 45%, transparent);}
+.portal-art{height:96px;margin:13px -24px 0;position:relative;overflow:hidden;background-position:center;background-size:cover;opacity:.84;filter:saturate(.82) contrast(1.06);}
+.portal-art::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,10,15,.08),rgba(4,10,15,.72));}
+.portal-card:nth-child(1) .portal-art{height:190px;margin-top:17px;}
 .portal-card h3{font-size:19px;font-weight:700;margin:16px 0 6px;position:relative;z-index:1;}
 .portal-card:nth-child(1) h3{font-size:24px;}
 .portal-card .desc{font-size:12.5px;color:var(--text-dim);line-height:1.55;margin-bottom:14px;position:relative;z-index:1;}

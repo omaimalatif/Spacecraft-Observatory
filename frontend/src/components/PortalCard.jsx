@@ -1,10 +1,10 @@
-export default function PortalCard({ num, color, icon, title, desc, tags, metrics, href = '#' }) {
+export default function PortalCard({ num, color, image, title, desc, tags, metrics, href = '#' }) {
   return (
     <a className="portal-card glass" style={{ '--pc': color }} href={href}>
       <div className="portal-top">
         <span className="portal-num">{num}</span>
-        <div className="portal-icon">{icon}</div>
       </div>
+      <div className="portal-art" style={{ backgroundImage: `url(${image})` }} aria-hidden="true" />
       <div>
         <h3>{title}</h3>
         <p className="desc">{desc}</p>
