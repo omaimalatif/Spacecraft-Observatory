@@ -1,25 +1,43 @@
-// The frontend's only network dependency is our own FastAPI backend.
-// It never calls CelesTrak or Space-Track directly -- see ../backend.
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
-export async function fetchGroups() {
-  const res = await fetch(`${API_BASE}/api/groups`);
-  if (!res.ok) throw new Error(`groups: HTTP ${res.status}`);
-  return res.json();
-}
-
-export async function fetchObjects(group, { search, regime, forceRefresh } = {}) {
-  const params = new URLSearchParams({ group });
-  if (search) params.set("search", search);
-  if (regime && regime !== "ALL") params.set("regime", regime);
-  if (forceRefresh) params.set("force_refresh", "true");
-
-  const res = await fetch(`${API_BASE}/api/objects?${params.toString()}`);
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`objects: HTTP ${res.status} ${detail}`.trim());
+async function get(path) {
+  let res
+  try {
+    res = await fetch(`${API_BASE}${path}`)
+  } catch (err) {
+    // fetch itself throws on network failure (backend not running, wrong
+    // port, actual CORS block) — distinguish that from a backend error reply
+    throw new Error(`Could not reach the backend at ${API_BASE}${path} — is it running? (${err.message})`)
   }
-  return res.json();
+  if (!res.ok) {
+    let detail = res.statusText
+    try {
+      const body = await res.json()
+      detail = body.detail || detail
+    } catch { /* body wasn't JSON — keep statusText */ }
+    throw new Error(`API ${path} failed: ${res.status} ${detail}`)
+  }
+  return res.json()
 }
 
-export { API_BASE };
+export const api = {
+  health: () => get('/api/health'),
+  spaceAssetsSummary: () => get('/api/space-assets/summary'),
+  spaceAssetsDashboard: () => get('/api/space-assets/dashboard'),
+  spaceAssetsGlobeObjects: (maxTotal = 4000) => get(`/api/space-assets/globe-objects?max_total=${maxTotal}`),
+  spaceAssetsOrbitPath: (noradId) => get(`/api/space-assets/orbit-path/${noradId}`),
+  spaceAssetsObjects: (group = 'active') => get(`/api/space-assets/objects?group=${encodeURIComponent(group)}`),
+  spaceAssetsByCountry: () => get('/api/space-assets/by-country'),
+  spaceAssetsComposition: () => get('/api/space-assets/orbital-snapshot/composition'),
+  spaceAssetsAltitude: (objectType = 'all') => get(`/api/space-assets/orbital-snapshot/altitude?object_type=${objectType}`),
+  searchSpaceAssets: (query) => get(`/api/space-assets/search?q=${encodeURIComponent(query)}`),
+  visibilityGroups: () => get('/api/visibility/groups'),
+  visibleSatellites: ({ lat, lon, group = 'stations', minElevation = 10 }) =>
+    get(`/api/visibility?lat=${lat}&lon=${lon}&group=${group}&min_elevation_deg=${minElevation}`),
+  locationPresets: () => get('/api/location/presets'),
+  locationSearch: (q) => get(`/api/location/search?q=${encodeURIComponent(q)}`),
+  issNow: () => get('/api/human-spaceflight/iss-now'),
+  peopleInSpace: () => get('/api/human-spaceflight/people-in-space'),
+  navigationConstellations: () => get('/api/navigation/constellations'),
+  earthObservationEvents: () => get('/api/earth-observation/events'),
+}
