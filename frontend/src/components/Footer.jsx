@@ -77,10 +77,16 @@ export default function Footer() {
           <div className="footer-divider" />
 
           <span className="footer-label">GNSS Contact</span>
-          <p className="contact-line">
+          <a
+            className="contact-line"
+            href="https://www.google.com/maps/search/?api=1&query=33.52038,73.17373"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open Institute of Space Technology on Google Maps"
+          >
             <span className="contact-icon">{PinIcon}</span>
-            1, Islamabad Highway, Islamabad 44000
-          </p>
+            1, Islamabad Expressway, Islamabad 44000
+          </a>
           <div className="footer-social">
             <IconLink href="https://pk.linkedin.com/company/ncgsa" icon={LinkedInIcon} label="LinkedIn" />
             <IconLink href="https://ncgsa.org.pk" icon={WebsiteIcon} label="Website" />

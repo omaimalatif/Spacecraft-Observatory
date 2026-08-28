@@ -9,8 +9,9 @@ const TYPE_COLOR = { PAYLOAD: Cesium.Color.fromCssColorString('#62d6ff'), DEBRIS
 const ORBIT_PATH_COLOR = Cesium.Color.fromCssColorString('#c9a227')
 
 function fmt(n) { return n == null ? 'Data unavailable' : new Intl.NumberFormat().format(n) }
+function num(n, digits = 0) { return Number.isFinite(Number(n)) ? Number(n).toFixed(digits) : '—' }
 
-export default function CesiumGlobe({ selected, onSelect }) {
+export default function CesiumGlobe({ selected, onSelect, onClose }) {
   const containerRef = useRef(null)
   const viewerRef = useRef(null)
   const pointsRef = useRef(null)
@@ -26,7 +27,7 @@ export default function CesiumGlobe({ selected, onSelect }) {
 
   // --- fetch live data once ---
   useEffect(() => {
-    api.spaceAssetsGlobeObjects(4000).then(setData).catch((err) => setError(err.message || 'Data unavailable'))
+    api.spaceAssetsGlobeObjects(22000).then(setData).catch((err) => setError(err.message || 'Data unavailable'))
   }, [])
 
   // --- init the viewer once, offline base imagery so nothing external can take it down ---
@@ -113,6 +114,10 @@ export default function CesiumGlobe({ selected, onSelect }) {
   useEffect(() => {
     const viewer = viewerRef.current
     if (!viewer || !selected) return
+    if (![selected.lon, selected.lat, selected.alt_km].every(Number.isFinite)) {
+      viewer.scene.requestRender()
+      return
+    }
     const target = Cesium.Cartesian3.fromDegrees(selected.lon, selected.lat, selected.alt_km * 1000)
     viewer.camera.flyTo({
       destination: Cesium.Cartesian3.fromDegrees(selected.lon, selected.lat, selected.alt_km * 1000 + 3_000_000),
@@ -172,7 +177,7 @@ export default function CesiumGlobe({ selected, onSelect }) {
 
       <div className="cesium-overlay cesium-legend">
         <button className={`legend active-dot ${typeFilter.PAYLOAD ? '' : 'off'}`} onClick={() => toggleType('PAYLOAD')}>
-          Active payloads {data ? `(${fmt(data.objects.filter((o) => o.object_type === 'PAYLOAD').length)})` : ''}
+          Satellites {data ? `(${fmt(data.objects.filter((o) => o.object_type === 'PAYLOAD').length)})` : ''}
         </button>
         <button className={`legend debris-dot ${typeFilter.DEBRIS ? '' : 'off'}`} onClick={() => toggleType('DEBRIS')}>
           Debris {data ? `(${fmt(data.objects.filter((o) => o.object_type === 'DEBRIS').length)})` : ''}
@@ -182,7 +187,7 @@ export default function CesiumGlobe({ selected, onSelect }) {
       {data && (
         <div className="cesium-overlay cesium-regime-row">
           {Object.entries(regimeCounts).filter(([, n]) => n > 0).map(([regime, count]) => (
-            <button key={regime} className={`legend regime-chip ${regimeFilter[regime] ? '' : 'off'}`} onClick={() => toggleRegime(regime)}>
+            <button key={regime} className={`legend regime-chip regime-${regime.toLowerCase()} ${regimeFilter[regime] ? '' : 'off'}`} onClick={() => toggleRegime(regime)}>
               {regime} ({fmt(count)})
             </button>
           ))}
@@ -194,6 +199,40 @@ export default function CesiumGlobe({ selected, onSelect }) {
       {data?.groups_unavailable?.length > 0 && (
         <div className="cesium-overlay cesium-status" style={{ bottom: 12, top: 'auto' }}>
           {data.groups_unavailable.length} of {data.groups_used.length} source groups temporarily unavailable — showing the rest.
+        </div>
+      )}
+      {data?.truncated && (
+        <div className="cesium-overlay cesium-status" style={{ bottom: 12, top: 'auto' }}>
+          Live population exceeds the render budget — showing a regime-stratified sample, not everyone.
+        </div>
+      )}
+
+      {selected && (
+        <div className="cesium-overlay cesium-profile">
+          <button className="close" onClick={onClose}>×</button>
+          <span className="eyebrow">LIVE OBJECT PROFILE</span>
+          <h3>{selected.name}</h3>
+          <p className="object-id">NORAD {selected.norad_id} · {selected.cospar_id || 'COSPAR unavailable'}</p>
+          <div className="profile-grid">
+            <label>Object type<b>{selected.object_type === 'DEBRIS' ? 'Debris' : 'Satellite'}</b></label>
+            {selected.object_type !== 'DEBRIS' && <label>Status<b className={selected.ops_status === 'active' ? 'is-active' : ''}>{selected.ops_status === 'active' ? 'Active' : 'Unknown'}</b></label>}
+            {selected.satellite_type && selected.satellite_type !== 'Other / Unclassified' && <label>Type<b>{selected.satellite_type}</b></label>}
+            <label>Orbital regime<b>{selected.regime}</b></label>
+            <label>Latitude<b>{num(selected.lat, 2)}°</b></label>
+            <label>Longitude<b>{num(selected.lon, 2)}°</b></label>
+            <label>Epoch<b>{selected.epoch ? new Date(selected.epoch).toLocaleDateString() : '—'}</b></label>
+            <label>Altitude (current)<b>{selected.alt_km == null ? '—' : `${fmt(selected.alt_km)} km`}</b></label>
+            <label>Inclination<b>{selected.inclination_deg != null ? `${num(selected.inclination_deg, 2)}°` : '—'}</b></label>
+            <label>Period<b>{selected.period_min != null ? `${num(selected.period_min, 1)} min` : '—'}</b></label>
+            <label>Eccentricity<b>{num(selected.eccentricity, 5)}</b></label>
+            <label>Mean motion<b>{selected.mean_motion_rev_day != null ? `${num(selected.mean_motion_rev_day, 6)} rev/day` : '—'}</b></label>
+            <label>Mean anomaly<b>{selected.mean_anomaly_deg != null ? `${num(selected.mean_anomaly_deg, 2)}°` : '—'}</b></label>
+            <label>Argument of perigee<b>{selected.argument_of_perigee_deg != null ? `${num(selected.argument_of_perigee_deg, 2)}°` : '—'}</b></label>
+            <label>RAAN<b>{selected.raan_deg != null ? `${num(selected.raan_deg, 2)}°` : '—'}</b></label>
+            <label>Semi-major axis<b>{selected.semi_major_axis_km != null ? `${fmt(selected.semi_major_axis_km)} km` : '—'}</b></label>
+            <label>Perigee altitude<b>{selected.perigee_alt_km != null ? `${fmt(selected.perigee_alt_km)} km` : '—'}</b></label>
+            <label>Apogee altitude<b>{selected.apogee_alt_km != null ? `${fmt(selected.apogee_alt_km)} km` : '—'}</b></label>
+          </div>
         </div>
       )}
 

@@ -1,9 +1,13 @@
+/* Live status signal */
+.live-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid rgba(107,240,181,.45);border-radius:999px;background:rgba(46,145,99,.14);font-weight:700;box-shadow:0 0 14px rgba(107,240,181,.1)}
+.live-badge i{margin-right:0;animation:live-signal 1.8s ease-in-out infinite}
+@keyframes live-signal{0%,100%{opacity:.65;box-shadow:0 0 5px #6bf0b5}50%{opacity:1;box-shadow:0 0 13px #6bf0b5}}
 /* Landing page refresh — editorial orbit map + compact observatory panels */
 .backdrop{background:#030507}.backdrop::after{background:radial-gradient(ellipse 72% 45% at 50% 12%,rgba(30,71,93,.28),transparent 68%),linear-gradient(180deg,rgba(3,5,7,.08),#030507 82%)}
 .hero{max-width:none;min-height:920px;padding:0 clamp(20px,4vw,68px);position:relative;overflow:hidden;background:radial-gradient(circle at 50% 65%,rgba(60,125,156,.15),transparent 29%)}
 .landing-nav{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(187,222,240,.16);position:relative;z-index:4}.landing-brand{display:flex;gap:8px;align-items:center;font:700 13px 'JetBrains Mono';letter-spacing:.8px}.landing-brand i{color:#79dfff;font-style:normal;font-size:19px;text-shadow:0 0 16px #48cbff}.landing-brand span{padding-left:10px;border-left:1px solid rgba(187,222,240,.2);font-size:9px;font-weight:400;color:#8498a5}.landing-links{display:flex;gap:30px}.landing-links a,.landing-status{font:10px 'JetBrains Mono';color:#9db0bc;letter-spacing:.5px}.landing-links a:hover{color:#e9f8ff}.landing-status{color:#9fe6c5}.landing-status b{display:inline-block;width:6px;height:6px;border-radius:50%;background:#71e8b4;box-shadow:0 0 9px #71e8b4;margin-right:6px}
 .hero-topline{position:relative;z-index:3;display:flex;justify-content:space-between;padding-top:29px}.hero-index{font:10px 'JetBrains Mono';color:#c9dbe5;line-height:1.55}.hero-index span{font-size:8px;color:#6d8593}.hero-nav{display:flex;gap:clamp(22px,4vw,74px);margin-right:10%;padding-top:2px}.hero-nav a{font-size:10px;line-height:1.35;color:#c5d5de;min-width:74px}.hero-nav a:hover{color:#79dfff}.hero-nav sup{display:block;font:9px 'JetBrains Mono';color:#6296ad;margin-bottom:5px}
-.hero-title{position:relative;z-index:3;width:340px;margin:64px 0 0 3.5vw}.hero-title .eyebrow{font-size:9px;color:#6bc6e5;margin-bottom:18px}.hero-title h1{font-size:clamp(52px,6.4vw,89px);letter-spacing:-4.4px;line-height:.84;margin:0}.hero-title h1 em{color:#e8f6fb;background:none;-webkit-text-fill-color:initial;text-shadow:none}.hero-title .lead{font-size:12px;line-height:1.7;max-width:275px;color:#9bacb7;margin-top:25px}
+.hero-title{position:relative;z-index:3;width:340px;margin:64px 0 0 3.5vw}.hero-title .eyebrow{font-size:18px;color:#6bc6e5;margin-bottom:18px}.hero-title h1{font-size:clamp(52px,6.4vw,89px);letter-spacing:-4.4px;line-height:.84;margin:0}.hero-title h1 em{color:#e8f6fb;background:none;-webkit-text-fill-color:initial;text-shadow:none}.hero-title .lead{font-size:12px;line-height:1.7;max-width:275px;color:#9bacb7;margin-top:25px}
 .hero-earth{width:min(1110px,81vw);height:min(540px,42vw);position:absolute;z-index:2;left:50%;bottom:126px;transform:translateX(-50%);border-radius:55% 55% 0 0 / 100% 100% 0 0;background-image:linear-gradient(180deg,rgba(1,7,11,.05),rgba(2,9,14,.38)),url('https://images-assets.nasa.gov/image/PIA04921/PIA04921~orig.jpg');background-size:cover;background-position:center 46%;box-shadow:0 -2px 0 rgba(179,235,255,.48),inset 0 -70px 90px rgba(0,0,0,.66),0 -14px 90px rgba(79,178,224,.22);filter:saturate(.55) contrast(1.13) brightness(.85)}.hero-earth::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 50% 27%,transparent 45%,rgba(0,0,0,.44) 100%)}
 .hero-floor{position:absolute;z-index:4;left:clamp(20px,4vw,68px);right:clamp(20px,4vw,68px);bottom:0;min-height:126px;border-top:1px solid rgba(187,222,240,.24);display:grid;grid-template-columns:1fr 1fr 1.35fr 1fr;align-items:stretch}.hero-floor>div{padding:21px 18px 16px 0;border-right:1px solid rgba(187,222,240,.16)}.hero-floor>div+div{padding-left:21px}.hero-floor span{display:block;font:9px 'JetBrains Mono';letter-spacing:.7px;color:#7692a1;margin-bottom:12px}.hero-floor b{display:block;font:600 25px 'JetBrains Mono';color:#edf9fe}.hero-floor b.unavailable-stat{font:600 13px Inter;color:#e4b56a;margin-top:7px}.hero-floor small{display:block;font-size:9px;color:#728b9a;margin-top:7px}.hero-floor p{font-size:11px;line-height:1.55;color:#bdced7;max-width:200px}.hero-enter{display:flex;align-items:center;justify-content:center;gap:14px;background:rgba(79,204,239,.9);color:#021018;font:700 10px 'JetBrains Mono';letter-spacing:.6px;transition:.25s}.hero-enter:hover{background:#dbf8ff}.hero-enter strong{font-size:18px}
 .section{padding-top:94px;padding-bottom:68px}.section-head{border-bottom:1px solid rgba(187,222,240,.15);padding-bottom:16px;margin-bottom:22px}.section-head h2{font-size:28px;letter-spacing:-1px}.section-head .tag{color:#639bb3}.portals-grid{gap:10px}.portal-card{border-radius:3px;background:linear-gradient(145deg,rgba(17,27,35,.9),rgba(8,13,18,.88));min-height:195px;padding:22px}.portal-card:nth-child(1){min-height:400px}.portal-card h3{font-size:18px}.portal-card:nth-child(1) h3{font-size:27px}.portal-card .desc{color:#91a5b0}.portal-card .portal-icon{border-radius:3px}.portal-card:hover{transform:translateY(-3px);box-shadow:0 22px 38px -28px var(--pc)}
@@ -158,11 +162,36 @@ nav.portal-nav a:hover{color:var(--gold-light);background:var(--glass-2);}
 .empty-hint{color:var(--text-faint);font-size:13px;text-align:center;padding:30px 10px;}
 .loading-hint{color:var(--gold);font-size:13px;text-align:center;padding:30px 10px;}
 
+/* ---- IST marker (fixed reference point on the visibility map) ---- */
+.ist-marker{position:relative;width:18px;height:18px;}
+.ist-marker-dot{position:absolute;inset:5px;border-radius:50%;background:#4FD8FF;box-shadow:0 0 10px #4FD8FF,0 0 2px #fff;}
+.ist-marker-ring{position:absolute;inset:0;border-radius:50%;border:2px solid #4FD8FF;animation:ist-pulse 1.8s ease-out infinite;}
+@keyframes ist-pulse{0%{transform:scale(0.55);opacity:0.9;}100%{transform:scale(2.4);opacity:0;}}
+
+/* ---- Street/Satellite basemap toggle, top-right of the visibility map ---- */
+.vis-layer-toggle{position:absolute;top:14px;right:14px;z-index:500;display:flex;gap:2px;background:rgba(10,14,18,0.72);backdrop-filter:blur(10px);border:1px solid var(--border-soft);border-radius:10px;padding:3px;}
+.vis-layer-toggle button{background:transparent;border:none;color:var(--text-dim);font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer;letter-spacing:.3px;}
+.vis-layer-toggle button.active{background:var(--gold);color:#04121a;font-weight:600;}
+.vis-layer-toggle button:hover:not(.active){color:var(--text);}
+
+/* ---- Visibility panel location header + big count ---- */
+.vis-panel-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start;}
+.vis-panel-top .vis-row{flex-wrap:nowrap;}
+.vis-panel-top .vis-field{width:110px;}
+.vis-panel-head{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.vis-eyebrow{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--text-faint);}
+.vis-loc-title{font-size:18px;line-height:1.25;color:var(--text);}
+.vis-loc-subtitle{font-size:12.5px;color:var(--text-dim);}
+.vis-loc-coords{font-size:12px;color:var(--text-faint);margin-top:2px;}
+.vis-count-block{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:14px 0;border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft);}
+.vis-count-num{font-size:34px;font-weight:700;color:var(--gold-light);line-height:1;}
+.vis-count-label{font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--text-faint);}
+
 /* ---- Portals grid — icon-based glass cards, no photos ---- */
 .portals-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
 .portal-card{
-  grid-column:span 2;border-radius:var(--radius);position:relative;
-  min-height:210px;cursor:pointer;transition:.3s;padding:24px;
+  grid-column:span 1;border-radius:var(--radius);position:relative;
+  min-height:170px;cursor:pointer;transition:.3s;padding:16px;
   display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;
 }
 .portal-card::before{
@@ -171,14 +200,11 @@ nav.portal-nav a:hover{color:var(--gold-light);background:var(--glass-2);}
 }
 .portal-card:hover{transform:translateY(-4px);border-color:var(--pc);}
 .portal-card:hover::before{opacity:0.38;}
-.portal-card:nth-child(1){grid-row:span 2;min-height:440px;}
+.portal-card:nth-child(1){grid-row:span 1;min-height:170px;}
 .portal-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;}
 .portal-num{font-family:'JetBrains Mono';font-size:11.5px;color:var(--text-faint);}
-.portal-art{height:96px;margin:13px -24px 0;position:relative;overflow:hidden;background-position:center;background-size:cover;opacity:.84;filter:saturate(.82) contrast(1.06);}
-.portal-art::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,10,15,.08),rgba(4,10,15,.72));}
-.portal-card:nth-child(1) .portal-art{height:190px;margin-top:17px;}
-.portal-card h3{font-size:19px;font-weight:700;margin:16px 0 6px;position:relative;z-index:1;}
-.portal-card:nth-child(1) h3{font-size:24px;}
+.portal-card h3{font-size:16px;font-weight:700;margin:10px 0 5px;position:relative;z-index:1;}
+.portal-card:nth-child(1) h3{font-size:16px;}
 .portal-card .desc{font-size:12.5px;color:var(--text-dim);line-height:1.55;margin-bottom:14px;position:relative;z-index:1;}
 .portal-tags{display:flex;flex-wrap:wrap;gap:6px;position:relative;z-index:1;margin-bottom:12px;}
 .portal-tags span{font-family:'JetBrains Mono';font-size:10px;color:var(--text-dim);background:rgba(255,255,255,0.04);border:1px solid var(--border-soft);padding:4px 8px;border-radius:20px;}
@@ -286,6 +312,12 @@ footer .fine{font-size:12px;color:var(--text-faint);max-width:680px;line-height:
 }
 .loc-result:hover{background:var(--glass-2);}
 .loc-result-hint{color:var(--text-faint);font-size:12px;padding:8px 9px;}
+.loc-coordinates{border-top:1px solid var(--border-soft);padding-top:8px;}
+.loc-coordinates>label{display:block;font-size:10px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;}
+.loc-coordinate-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;}
+.loc-coordinate-row input{min-width:0;width:100%;box-sizing:border-box;background:var(--glass-2);border:1px solid var(--border-soft);color:var(--text);padding:8px;border-radius:7px;font-size:12px;font-family:'Inter';}
+.loc-coordinate-row button{border:0;border-radius:7px;background:var(--accent,#e68fbf);color:#071018;padding:0 11px;font-size:11px;font-weight:700;cursor:pointer;}
+.loc-coordinate-error{display:block;color:#ff9d86;font-size:10px;margin-top:5px;}
 
 /* ---- Portal 01: Global Space Assets command dashboard ---- */
 .assets-page{max-width:1540px;margin:0 auto;padding:18px 28px 50px;color:#eaf3fb;}

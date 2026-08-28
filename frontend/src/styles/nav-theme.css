@@ -1,0 +1,285 @@
+/* Portal 03 reuses the Portal 01 dashboard skeleton (assets-theme.css) with
+   a magenta accent instead of cyan, matching this portal's PortalGrid color. */
+.nav-page .assets-intro .eyebrow,
+.nav-page .section-title .eyebrow,
+.nav-page .panel-head .eyebrow { color: #e68fbf; }
+.nav-page .assets-header .wordmark .mark { color: #e68fbf; text-shadow: 0 0 16px #e68fbf; }
+.nav-page .assets-header nav a.active { color: #f7d9ec; }
+.nav-page .asset-kpis article::after { background: rgba(230, 143, 191, .72); }
+.nav-page .bar-track i { background: linear-gradient(90deg, #7a3f5c, #e68fbf); }
+.nav-page .search-card form button { background: #e68fbf; color: #2a0e1c; }
+.nav-page .cesium-orbit-btn .legend { border-color: #e68fbf; }
+.nav-page .cesium-title { color: #f7d9ec; }
+.nav-page .cesium-cam-controls .skyplot-action { padding: 5px 10px; font-size: 9px; }
+
+/* --- Compact navigation command view --- */
+.nav-page .assets-intro { padding: 30px 0 22px; }
+.nav-page .assets-intro h1 { font-size: clamp(34px, 3.8vw, 52px); letter-spacing: -2px; line-height: .95; }
+.nav-page .assets-intro p:not(.eyebrow) { max-width: 560px; font-size: 12px; line-height: 1.45; }
+.nav-page .command-grid { grid-template-columns: minmax(0, 1.7fr) minmax(280px, .72fr); margin-top: 16px; }
+.nav-page .globe-card { min-height: 0; }
+.nav-page .globe-card .panel-head { padding: 15px 17px 11px; }
+.nav-page .globe-card .panel-head h2 { font-size: 18px; }
+.nav-page .cesium-globe-wrap { height: 460px; }
+
+/* --- Cesium view-mode switch + per-location picker (Global vs Visible-from-location) --- */
+.cesium-mode-row { align-items: center; gap: 10px; margin-bottom: 6px; }
+.cesium-view-mode { flex: 0 0 auto; }
+.cesium-view-mode button { padding: 5px 11px; font-size: 10px; }
+.cesium-orbit-frame { flex: 0 0 auto; }
+.cesium-orbit-frame button { padding: 4px 9px; font-size: 9px; }
+.cesium-location-picker { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cesium-location-select {
+  font: 600 10px 'JetBrains Mono'; letter-spacing: .3px; padding: 5px 9px; border-radius: 6px;
+  border: 1px solid rgba(230,143,191,.5); background: rgba(5,13,18,.72); color: #f7d9ec;
+  max-width: 190px; cursor: pointer;
+}
+.cesium-location-select option { background: #0a1219; color: #f4f6f8; }
+.cesium-location-picker .mask-control { margin-left: 0; }
+.sync-hint { color: #6e8ea0; font-style: italic; }
+.nav-page .profile-panel { min-height: 0; height: fit-content; padding: 18px; }
+.nav-page .profile-empty { height: auto; min-height: 0; padding: 12px 8px; }
+.nav-page .profile-grid { gap: 10px 8px; }
+.nav-page .profile-note { margin-top: 16px; padding-top: 11px; }
+.nav-page .snapshot { margin-top: 28px; }
+.nav-page .snapshot-grid { align-items: start; }
+.nav-page .snapshot-grid .chart-card,
+.nav-page .snapshot-grid .search-card { min-height: 0; padding: 16px; }
+.nav-page .snapshot-grid .chart-card h3 { margin-bottom: 16px; }
+
+/* --- Availability panel --- */
+.availability-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 14px; align-items: stretch; }
+.availability-map-panel { min-width: 0; height: 100%; box-sizing: border-box; padding: 15px 16px; }
+.availability-map-panel h2 { font-size: 16px; margin-bottom: 8px; }
+.map-satellite-mode { display: flex; gap: 6px; margin: 8px 0 10px; }
+.map-satellite-mode button { padding: 5px 9px; border: 1px solid rgba(230,143,191,.4); border-radius: 5px; background: transparent; color: #a6bfcc; font: 600 10px 'JetBrains Mono'; cursor: pointer; }
+.map-satellite-mode button.active { background: rgba(230,143,191,.16); border-color: #e68fbf; color: #f7d9ec; }
+.availability-map-panel .world-picker-map { min-height: 0; height: 360px; }
+.availability-right-column { min-width: 0; }
+.availability-stage .skyplot-section { margin-top: 0; min-width: 0; }
+.availability-stage .skyplot-panel { min-height: 580px; box-sizing: border-box; }
+.availability-results { grid-column: 1 / -1; }
+.avail-headline { display: flex; align-items: baseline; gap: 10px; margin: 14px 0 10px; }
+.avail-headline b { font: 700 34px 'JetBrains Mono'; color: #f7d9ec; }
+.avail-headline span { font-size: 12px; color: #a6bfcc; max-width: 220px; line-height: 1.4; }
+.nav-page #availability .country-list { gap: 9px; margin: 16px 0 4px; }
+.nav-page #availability .country-list { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.nav-page #availability .country-list li {
+  padding: 9px 11px;
+  border: 1px solid rgba(187, 222, 240, .14);
+  border-left: 2px solid currentColor;
+  border-radius: 4px;
+  background: rgba(8, 24, 35, .58);
+  box-shadow: inset 0 1px rgba(220, 248, 255, .04), 0 8px 18px -16px rgba(98, 214, 255, .8);
+}
+.nav-page #availability .country-list li b { color: #e8f8ff; }
+.nav-page .availability-results { padding: 9px 12px; }
+.nav-page .availability-results h2 { font-size: 14px; margin-bottom: 4px; }
+.nav-page .availability-results .avail-headline { margin: 4px 0 3px; }
+.nav-page .availability-results .avail-headline b { font-size: 22px; }
+.nav-page .availability-results .country-list { gap: 3px; margin: 5px 0 0; }
+.nav-page .availability-results .country-list li { padding: 4px 7px; }
+.nav-page .availability-results .visibility-group {
+  border: 1px solid rgba(187, 222, 240, .14);
+  border-left: 2px solid currentColor;
+  border-radius: 4px;
+  background: rgba(8, 24, 35, .58);
+  overflow: hidden;
+}
+.nav-page .availability-results .visibility-group summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 8px;
+  cursor: pointer;
+  list-style-position: inside;
+  font: 600 10px 'JetBrains Mono';
+  letter-spacing: .35px;
+  text-transform: uppercase;
+}
+.nav-page .availability-results .visibility-group summary::marker { font-size: 9px; }
+.nav-page .availability-results .visibility-group summary b {
+  margin-left: auto;
+  min-width: 2ch;
+  color: #f7d9ec;
+  font: 700 12px 'JetBrains Mono';
+  text-align: right;
+}
+.nav-page .availability-results .visibility-satellite-list {
+  display: grid;
+  gap: 2px;
+  padding: 3px 6px 6px 22px;
+  border-top: 1px solid rgba(187, 222, 240, .1);
+  background: rgba(3, 12, 18, .34);
+}
+.nav-page .availability-results .visibility-satellite-list button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 4px;
+  border: 0;
+  border-bottom: 1px solid rgba(187, 222, 240, .07);
+  background: transparent;
+  color: #d9edf4;
+  font: 10px 'JetBrains Mono';
+  text-align: left;
+  cursor: pointer;
+}
+.nav-page .availability-results .visibility-satellite-list button:last-child { border-bottom: 0; }
+.nav-page .availability-results .visibility-satellite-list button:hover { color: #fff; background: rgba(230, 143, 191, .1); }
+.nav-page .availability-results .visibility-satellite-list button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-page .availability-results .visibility-satellite-list button small { margin-left: auto; flex: 0 0 auto; color: #7698a8; font: 9px 'JetBrains Mono'; }
+.nav-page .nav-search-card { min-width: 0; padding: 18px; }
+.nav-page .nav-search-card h2 { font-size: 17px; margin-bottom: 12px; }
+.nav-page .nav-search-card form { display: flex; gap: 7px; }
+.nav-page .nav-search-card form input { min-width: 0; width: 100%; }
+.nav-page .nav-search-card form button { padding: 0 11px; }
+.nav-page .nav-search-card .search-results { max-height: 150px; overflow-y: auto; }
+.nav-page .snapshot-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+/* --- Static service-info reference cards --- */
+.service-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+.service-card { background: linear-gradient(145deg, rgba(11,21,28,.94), rgba(5,10,14,.92)); border: 1px solid rgba(187,222,240,.13); padding: 16px 17px; border-top: 2px solid var(--sc, #7d8795); }
+.service-card header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.service-card header .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sc, #7d8795); box-shadow: 0 0 8px var(--sc, #7d8795); }
+.service-card header h4 { font-size: 15px; letter-spacing: -.2px; flex: 1; }
+.service-card header .status { font-size: 9px; color: #8fe3c7; font-family: 'JetBrains Mono'; text-align: right; }
+.service-card .full-name { font-size: 11px; color: #8da5b1; margin-bottom: 10px; }
+.service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; font-size: 11px; margin-bottom: 10px; }
+.service-grid label { display: flex; flex-direction: column; gap: 2px; color: #718b99; }
+.service-grid label b { color: #e4f3f9; font: 12px 'JetBrains Mono'; }
+.service-card .signals, .service-card .accuracy { font-size: 11.5px; color: #a6bfcc; line-height: 1.5; margin-bottom: 6px; }
+.service-card .signals b, .service-card .accuracy b { color: #cddce3; font-weight: 600; }
+.service-card a { display: inline-block; margin-top: 4px; font-size: 10px; color: #e68fbf; border-bottom: 1px dotted rgba(230,143,191,.5); }
+.service-card a:hover { color: #f7d9ec; }
+
+@media (max-width: 1150px) { .service-info-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 680px) { .service-info-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .availability-stage { grid-template-columns: 1fr; }
+  .availability-map-panel .world-picker-map { min-height: 0; height: 280px; }
+  .availability-stage .skyplot-panel { min-height: 0; }
+  .nav-page #availability .country-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* The base .command-grid/.snapshot-grid mobile collapse in theme.css never
+   applies here — `.nav-page .command-grid` outranks the plain `.command-grid`
+   selector in specificity regardless of media query, so without this the 3D
+   view and profile panel stayed squeezed side-by-side on narrow screens. */
+@media (max-width: 1150px) {
+  .nav-page .command-grid { grid-template-columns: 1fr; }
+  .nav-page .snapshot-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  .nav-page .cesium-globe-wrap { height: 400px; }
+  .nav-page .cesium-controls { max-width: 92%; }
+  .cesium-location-select { max-width: 140px; }
+  .nav-page #availability .country-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* --- Constellation legend chips (globe overlay + sky plot toolbar) --- */
+.constellation-chip {
+  font: 600 10px 'JetBrains Mono'; letter-spacing: .4px; text-transform: uppercase;
+  padding: 5px 10px; border-radius: 999px; border: 1px solid; background: rgba(5,13,18,.7);
+  cursor: pointer; transition: opacity .15s;
+}
+.constellation-chip.off { opacity: .3; }
+
+/* --- Sky Plot panel --- */
+.skyplot-section { margin-top: 10px; }
+.skyplot-panel { padding: 20px 21px; }
+.skyplot-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.skyplot-head h2 { font-size: 20px; letter-spacing: -.5px; }
+.skyplot-head-right { display: flex; align-items: center; gap: 10px; }
+.skyplot-action {
+  font: 600 10px 'JetBrains Mono'; letter-spacing: .3px; padding: 7px 11px; border-radius: 5px;
+  cursor: pointer; transition: background .15s, border-color .15s, color .15s, transform .15s;
+}
+.skyplot-action:hover { transform: translateY(-1px); }
+.skyplot-action:focus-visible { outline: 2px solid #62d6ff; outline-offset: 2px; }
+.skyplot-reset { border: 1px solid rgba(187,222,240,.24); background: rgba(8,24,35,.8); color: #a6bfcc; }
+.skyplot-reset:hover { border-color: #62d6ff; color: #dff6ff; background: rgba(98,214,255,.12); }
+.skyplot-fullscreen-action { border: 1px solid rgba(230,143,191,.65); background: rgba(230,143,191,.14); color: #f7d9ec; }
+.skyplot-fullscreen-action:hover { background: #e68fbf; color: #2a0e1c; }
+.live-badge.small { font-size: 9px; }
+.skyplot-mode-toggle { display: flex; border: 1px solid rgba(230,143,191,.4); border-radius: 6px; overflow: hidden; }
+.skyplot-mode-toggle button { font: 600 11px 'JetBrains Mono'; padding: 6px 14px; background: transparent; color: #a6bfcc; border: none; cursor: pointer; }
+.skyplot-mode-toggle button.active { background: #e68fbf; color: #2a0e1c; }
+
+.skyplot-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 10px 0 16px; border-bottom: 1px solid rgba(187,222,240,.13); margin-bottom: 16px; }
+.toolbar-divider { width: 1px; height: 16px; background: rgba(187,222,240,.2); margin: 0 2px; }
+.toggle-pill {
+  font: 600 10px 'JetBrains Mono'; letter-spacing: .4px; padding: 5px 12px; border-radius: 999px;
+  border: 1px solid rgba(98,214,255,.5); background: transparent; color: #a6bfcc; cursor: pointer; transition: .15s;
+}
+.toggle-pill.active { border-color: #62d6ff; color: #62d6ff; background: rgba(98,214,255,.1); }
+.mask-control { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.mask-control button {
+  font: 600 10px 'JetBrains Mono'; padding: 5px 9px; border-radius: 6px; border: 1px solid rgba(187,222,240,.2);
+  background: transparent; color: #a6bfcc; cursor: pointer;
+}
+.mask-control button.active { border-color: #e68fbf; color: #f7d9ec; background: rgba(230,143,191,.12); }
+.mask-control label { display: flex; align-items: center; gap: 5px; font: 10px 'JetBrains Mono'; color: #718b99; margin-left: 6px; }
+.mask-control input {
+  width: 44px; background: #0b1c26; border: 1px solid rgba(187,222,240,.2); border-radius: 5px;
+  color: #e4f3f9; font: 12px 'JetBrains Mono'; padding: 4px 6px; text-align: center;
+}
+
+.skyplot-svg { width: 100%; max-width: 480px; height: auto; display: block; margin: 0 auto; }
+.skyplot-globe3d { width: 100%; height: 480px; overflow: hidden; cursor: grab; touch-action: none; background: radial-gradient(circle at 50% 48%, rgba(31,106,144,.18), transparent 42%), #050d13; }
+.skyplot-globe3d:active { cursor: grabbing; }
+.skyplot-earth { fill: url(#skyplot-earth-gradient); stroke: rgba(119,217,255,.55); stroke-width: 1.5; filter: drop-shadow(0 0 18px rgba(48,162,225,.3)); }
+.skyplot-ring { fill: none; stroke: rgba(187,222,240,.16); stroke-width: 1; }
+.skyplot-mask-ring { fill: none; stroke: #e68fbf; stroke-width: 1.2; stroke-dasharray: 4 4; opacity: .7; }
+.skyplot-ring-label { font: 9px 'JetBrains Mono'; fill: #5c7482; }
+.skyplot-cardinal { font: 700 12px 'JetBrains Mono'; fill: #cddce3; text-anchor: middle; }
+.skyplot-sat { cursor: pointer; }
+.skyplot-los { stroke-width: .75; opacity: .35; }
+.skyplot-label { font: 9px 'JetBrains Mono'; fill: #cddce3; }
+.skyplot-track { fill: none; stroke-width: 2; opacity: .8; stroke-dasharray: 3 3; }
+.skyplot-track-note { text-align: center; font-size: 11px; color: #8da5b1; margin-top: 10px; }
+.skyplot-source { display: block; text-align: center; margin-top: 12px; color: #6e8ea0; }
+
+.skyplot-fullscreen {
+  position: fixed; inset: 20px; z-index: 200; overflow-y: auto;
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.8);
+}
+.skyplot-fullscreen .skyplot-svg { max-width: 640px; }
+.map-hint { font-size: 11px; color: #718b99; margin: 12px 0 8px; }
+.world-picker-map {
+  height: 240px; border-radius: 10px; overflow: hidden;
+  border: 1px solid rgba(187,222,240,.15); margin-bottom: 12px;
+  position: relative;
+}
+.map-fullscreen-button {
+  position: absolute; top: 10px; right: 10px; z-index: 1000;
+  padding: 7px 10px; border: 1px solid rgba(230,143,191,.65); border-radius: 5px;
+  background: rgba(5,13,18,.88); color: #f7d9ec; font: 600 10px 'JetBrains Mono';
+  cursor: pointer;
+}
+.map-fullscreen-button:hover { background: #e68fbf; color: #2a0e1c; }
+.map-constellation-legend {
+  position: absolute; z-index: 1000; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap;
+  align-items: center; gap: 6px 10px; max-width: calc(100% - 24px); padding: 8px 10px;
+  border: 1px solid rgba(187,222,240,.2); border-radius: 6px; background: rgba(5,13,18,.88);
+  color: #cddce3; font: 10px 'JetBrains Mono'; pointer-events: none;
+}
+.map-constellation-legend strong { flex-basis: 100%; color: #f7d9ec; font-size: 9px; text-transform: uppercase; letter-spacing: .4px; }
+.map-constellation-legend span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.map-constellation-legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.map-constellation-legend .location-key { background: #e68fbf; box-shadow: 0 0 0 2px rgba(230,143,191,.28); }
+.world-picker-map-fullscreen {
+  position: fixed; top: 18px; right: 18px; bottom: 58px; left: 18px; z-index: 3000; height: auto !important;
+  margin: 0; border-color: rgba(230,143,191,.7);
+  box-shadow: 0 30px 80px rgba(0,0,0,.8);
+}
+.world-picker-map-fullscreen .map-fullscreen-button { top: 16px; right: 16px; }
+.world-picker-map .leaflet-control-attribution { display: none; }
+
+@media (max-width: 680px) {
+  .world-picker-map-fullscreen { top: 8px; right: 8px; bottom: 42px; left: 8px; }
+  .world-picker-map-fullscreen .map-fullscreen-button { top: 10px; right: 10px; }
+}

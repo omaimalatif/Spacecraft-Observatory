@@ -1,24 +1,15 @@
-export default function PortalCard({ num, color, image, title, desc, tags, metrics, href = '#' }) {
-  return (
-    <a className="portal-card glass" style={{ '--pc': color }} href={href}>
-      <div className="portal-top">
-        <span className="portal-num">{num}</span>
-      </div>
-      <div className="portal-art" style={{ backgroundImage: `url(${image})` }} aria-hidden="true" />
+export default function PortalCard({ color, title, desc, href = '#' }) {
+  const card = (
+    <article className={`portal-card glass${href === '#' ? ' is-unavailable' : ''}`} style={{ '--pc': color }}>
       <div>
         <h3>{title}</h3>
         <p className="desc">{desc}</p>
-        {metrics && (
-          <div className="portal-metrics">
-            {metrics.map((m) => (
-              <div key={m.label}><b>{m.value}</b><span>{m.label}</span></div>
-            ))}
-          </div>
-        )}
-        <div className="portal-tags">
-          {tags.map((t) => <span key={t}>{t}</span>)}
-        </div>
       </div>
-    </a>
+      <span className="portal-action">
+        {href === '#' ? 'Portal unavailable' : <>Open portal <strong aria-hidden="true">→</strong></>}
+      </span>
+    </article>
   )
+
+  return href === '#' ? card : <a className="portal-card-link" href={href}>{card}</a>
 }
