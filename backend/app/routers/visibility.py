@@ -3,8 +3,8 @@
 # there, computed with real SGP4 propagation — not a lookup table.
 import httpx
 from fastapi import APIRouter, HTTPException, Query
-from app.services.celestrak import fetch_group_tle
-from app.services.orbital import compute_visible
+from app.services.celestrak import fetch_group_tle, fetch_group_json
+from app.services.orbital import compute_visible, compute_visible_from_omm
 from app.services.local_time import resolve_local_time
 
 router = APIRouter()
@@ -45,11 +45,44 @@ async def visible_satellites(
         tle_records = await fetch_group_tle(group)
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak: {exc}") from exc
+    except RuntimeError:
+        # CelesTrak rate-limits each (GROUP, FORMAT) pair independently, so a
+        # TLE-format download can be blocked even though the JSON format for
+        # the same group was already warmed at startup and is sitting in
+        # cache. Fall back to that instead of failing the request outright —
+        # same real SGP4 propagation, just built from the OMM/JSON fields.
+        try:
+            omm_records = await fetch_group_json(group)
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak: {exc}") from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+        checked = omm_records[:MAX_CHECK]
+        # Count every satellite above the elevation threshold, not just the
+        # slice we return for the panel's list — visible_count must be the
+        # true total, independent of `limit`.
+        all_visible = compute_visible_from_omm(
+            checked, lat, lon, elevation_m=elevation_m, min_elevation_deg=min_elevation_deg, limit=len(checked)
+        )
+        return {
+            "location": {"lat": lat, "lon": lon, "elevation_m": elevation_m},
+            "group": group,
+            "catalog_size": len(omm_records),
+            "checked_count": len(checked),
+            "visible_count": len(all_visible),
+            "min_elevation_deg": min_elevation_deg,
+            "satellites": all_visible[:limit],
+            "time": resolve_local_time(lat, lon),
+            "source": "CelesTrak GP JSON (OMM) + Skyfield SGP4 propagation, computed at request time",
+        }
 
     checked = tle_records[:MAX_CHECK]
 
-    visible = compute_visible(
-        checked, lat, lon, elevation_m=elevation_m, min_elevation_deg=min_elevation_deg, limit=limit
+    # Same principle as above: compute the full visible set for an accurate
+    # count, then hand back only `limit` of them for the satellite list.
+    all_visible = compute_visible(
+        checked, lat, lon, elevation_m=elevation_m, min_elevation_deg=min_elevation_deg, limit=len(checked)
     )
 
     return {
@@ -57,9 +90,9 @@ async def visible_satellites(
         "group": group,
         "catalog_size": len(tle_records),
         "checked_count": len(checked),
-        "visible_count": len(visible),
+        "visible_count": len(all_visible),
         "min_elevation_deg": min_elevation_deg,
-        "satellites": visible,
+        "satellites": all_visible[:limit],
         "time": resolve_local_time(lat, lon),
         "source": "CelesTrak GP TLE + Skyfield SGP4 propagation, computed at request time",
     }

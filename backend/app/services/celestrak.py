@@ -17,6 +17,8 @@ from pathlib import Path
 import httpx
 from cachetools import TTLCache
 
+from app.services.satcat_taxonomy import classify_satellite_type
+
 logger = logging.getLogger(__name__)
 
 BASE = "https://celestrak.org/NORAD/elements/gp.php"
@@ -274,7 +276,14 @@ def shape_object_minimal(item: dict) -> dict:
         "INCLINATION",
         "ECCENTRICITY",
     )
-    return {field: item.get(field) for field in fields}
+    shaped = {field: item.get(field) for field in fields}
+    # This function only ever sees records from GROUP=active / GROUP=stations
+    # (search() and the globe both source from there), so "active" is a fact
+    # about the source list, not an inference. Type is still best-effort —
+    # see satcat_taxonomy.classify_satellite_type.
+    shaped["OPS_STATUS"] = "active"
+    shaped["SATELLITE_TYPE"] = classify_satellite_type(item.get("OBJECT_NAME"))
+    return shaped
 
 
 def search_active_catalog(query: str, limit: int = 25) -> list[dict]:

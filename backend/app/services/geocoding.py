@@ -12,8 +12,9 @@ BASE = "https://nominatim.openstreetmap.org/search"
 HEADERS = {"User-Agent": "ncgsa-orbital-observatory/0.2 (spacecraft observatory location search)"}
 
 
-async def search_place(query: str, limit: int = 10, country_code: str = "pk") -> list[dict]:
-    """Return candidate places for a typed query, best match first."""
+async def search_place(query: str, limit: int = 10, country_code: str | None = "pk") -> list[dict]:
+    """Return candidate places for a typed query, best match first.
+    country_code=None searches worldwide (no country restriction)."""
     query = query.strip()
     if len(query) < 2:
         return []
@@ -22,7 +23,9 @@ async def search_place(query: str, limit: int = 10, country_code: str = "pk") ->
     if key in _cache:
         return _cache[key]
 
-    params = {"q": query, "format": "jsonv2", "limit": limit, "addressdetails": 1, "countrycodes": country_code}
+    params = {"q": query, "format": "jsonv2", "limit": limit, "addressdetails": 1}
+    if country_code:
+        params["countrycodes"] = country_code
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(BASE, params=params, headers=HEADERS)
         r.raise_for_status()

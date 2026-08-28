@@ -9,11 +9,15 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
+
+load_dotenv()  # picks up backend/.env (e.g. FIRMS_MAP_KEY) before any router reads os.environ
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.routers import space_assets, visibility, human_spaceflight, navigation, earth_observation, location
+from app.routers import space_assets, visibility, human_spaceflight, navigation, earth_observation, location, space_science
 from app.services.celestrak import close_client, warmup_catalog
 from app.services.satcat import close_client as close_satcat_client, warmup as warmup_satcat
 
@@ -81,5 +85,8 @@ app.include_router(navigation.router, prefix="/api/navigation", tags=["03 · Nav
 # Portal 07 — Human Spaceflight (Open Notify)
 app.include_router(human_spaceflight.router, prefix="/api/human-spaceflight", tags=["07 · Human Spaceflight"])
 
-# Portals 04, 05, 06, 08 follow the exact same pattern — see backend/README section
+# Portal 06 — Space Science & Exploration (JPL Horizons + NASA NeoWs)
+app.include_router(space_science.router, prefix="/api/space-science", tags=["06 · Space Science"])
+
+# Portals 04, 05, 08 follow the exact same pattern — see backend/README section
 # "Adding a portal route" for the CelesTrak group / source to wire up next.
