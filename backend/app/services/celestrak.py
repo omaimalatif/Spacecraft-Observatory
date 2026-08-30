@@ -321,9 +321,24 @@ def get_catalog_status(group: str) -> str:
     return "missing"
 
 
-async def warmup_catalog(groups: tuple[str, ...] = ("last-30-days", "active")) -> None:
-    """Prefetch commonly used groups once at startup (sequential to respect rate limits)."""
-    for group in groups:
+async def warmup_catalog(
+    groups: tuple[str, ...] = (
+        "last-30-days", "active",
+        # Every group a portal in this app actually fetches. Warming all of
+        # them once at startup means the first click into any portal reads
+        # from cache instead of cold-fetching — and fetching them here,
+        # sequentially with a pause between each, is also what keeps a dev
+        # server restart from re-hammering CelesTrak across 15 groups at
+        # once and tripping its per-cycle rate limit.
+        "gnss", "weather", "stations", "science", "cubesat", "resource",
+        "intelsat", "ses", "eutelsat", "telesat", "iridium-NEXT", "orbcomm", "globalstar", "amateur",
+    ),
+) -> None:
+    """Prefetch every group this app uses once at startup (sequential, with a
+    short pause between requests, to respect CelesTrak's rate limits)."""
+    for i, group in enumerate(groups):
+        if i > 0:
+            await asyncio.sleep(0.35)
         try:
             await fetch_group_json(group)
             logger.info("CelesTrak warmup complete for GROUP=%s", group)

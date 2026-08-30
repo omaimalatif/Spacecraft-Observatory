@@ -3,15 +3,18 @@ import * as Cesium from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { api } from '../api.js'
 
-// One color per human-spaceflight satellite family (all from CelesTrak's single
-// GROUP=stations feed — see backend/app/routers/human_spaceflight_sat.py) so the
-// globe, sky plot
+// One color per altitude band (computed from each CubeSat's own orbital
+// elements — see backend/app/routers/cubesat.py — not a name guess, since
+// CubeSat missions share no naming convention) so the globe, sky plot
 // and legend all agree. Every orbit line, LOS line and point marker is
 // colored from this single table — nothing is hardcoded per-render.
 export const CATEGORY_COLOR = {
-  'ISS Segment': '#22c55e',
-  'Tiangong (CSS) Segment': '#ef4444',
-  'Crew & Cargo Vehicles': '#eab308',
+  'Very Low LEO (<400 km)': '#ef4444',
+  'Low LEO (400\u2013600 km)': '#eab308',
+  'SSO Belt (600\u2013800 km)': '#22c55e',
+  'High LEO/Other (800+ km)': '#3b82f6',
+  // Defensive fallback only — the backend always tags every object with one
+  // of the four bands above, this key is never a real category label.
   Other: '#7d8795',
 }
 
@@ -22,7 +25,7 @@ export const CATEGORY_COLOR = {
 const EARTH_SIDEREAL_DEG_PER_MIN = 360.98564736629 / 1440
 
 // Display order used everywhere the constellations are listed as a legend/row.
-export const CATEGORY_ORDER = ['ISS Segment', 'Tiangong (CSS) Segment', 'Crew & Cargo Vehicles']
+export const CATEGORY_ORDER = ['Very Low LEO (<400 km)', 'Low LEO (400\u2013600 km)', 'SSO Belt (600\u2013800 km)', 'High LEO/Other (800+ km)']
 
 const OBSERVER_COLOR = Cesium.Color.fromCssColorString('#e9f8ff')
 const GLOBE_POLL_MS = 5 * 60 * 1000 // matches the 5 min backend cache TTL
@@ -31,7 +34,7 @@ const ROTATE_RAD_PER_TICK = 0.0009
 function fmt(n) { return n == null ? 'Data unavailable' : new Intl.NumberFormat().format(n) }
 function cesiumColor(hex) { return Cesium.Color.fromCssColorString(hex) }
 
-export default function HsfGlobe({ selected, onSelect, presets: presetsProp, location: locationProp, onLocationChange }) {
+export default function CubesatGlobe({ selected, onSelect, presets: presetsProp, location: locationProp, onLocationChange }) {
   const containerRef = useRef(null)
   const wrapRef = useRef(null)
   const viewerRef = useRef(null)
@@ -62,7 +65,7 @@ export default function HsfGlobe({ selected, onSelect, presets: presetsProp, loc
   const [mask, setMask] = useState(10)
   const [maskInput, setMaskInput] = useState('10')
 
-  // "global" = every human-spaceflight satellite on the live catalog, no single location involved.
+  // "global" = every cataloged CubeSat on the live catalog, no single location involved.
   // "local"  = only the satellites currently visible above the mask from one chosen
   // location, with a line-of-sight drawn to each. These used to be blended into one
   // overlay (a fixed Islamabad location's LOS lines drawn on top of the full global
@@ -70,7 +73,7 @@ export default function HsfGlobe({ selected, onSelect, presets: presetsProp, loc
   const [viewMode, setViewMode] = useState('global') // 'global' | 'local'
 
   // Observer location is shared with the availability map/sky-plot further down this
-  // portal (lifted into HumanSpaceflightDashboard) so picking a place there — search, preset,
+  // portal (lifted into CubesatDashboard) so picking a place there — search, preset,
   // or a map click, anywhere on Earth, not just Pakistan — updates this view too.
   const [fallbackLocation, setFallbackLocation] = useState(null)
   const [fallbackPresets, setFallbackPresets] = useState([])
@@ -90,11 +93,11 @@ export default function HsfGlobe({ selected, onSelect, presets: presetsProp, loc
 
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  // --- live human-spaceflight-satellite positions, polled on the same cadence as the backend cache ---
+  // --- live CubeSat positions, polled on the same cadence as the backend cache ---
   useEffect(() => {
     let cancelled = false
     function poll() {
-      api.humanSpaceflightSatGlobeObjects()
+      api.cubesatGlobeObjects()
         .then((d) => { if (!cancelled) { setData(d); setStatus('live'); setError(null) } })
         .catch((err) => { if (!cancelled) { setStatus('offline'); setError(err.message || 'Data unavailable') } })
     }
@@ -237,7 +240,7 @@ export default function HsfGlobe({ selected, onSelect, presets: presetsProp, loc
     if (!showOrbits || orbitPathsByNorad) return
     let cancelled = false
     setOrbitState('loading')
-    api.humanSpaceflightSatOrbitPaths()
+    api.cubesatOrbitPaths()
       .then((result) => {
         if (cancelled) return
         const byNorad = {}
@@ -293,7 +296,7 @@ export default function HsfGlobe({ selected, onSelect, presets: presetsProp, loc
     if (viewMode !== 'local' || !location) { setLosResult(null); setLosState('idle'); return }
     let cancelled = false
     setLosState('loading')
-    api.humanSpaceflightSatAvailability({ lat: location.lat, lon: location.lon, minElevation: mask })
+    api.cubesatAvailability({ lat: location.lat, lon: location.lon, minElevation: mask })
       .then((result) => { if (!cancelled) { setLosResult(result); setLosState('done') } })
       .catch(() => { if (!cancelled) setLosState('error') })
     return () => { cancelled = true }
@@ -402,7 +405,7 @@ export default function HsfGlobe({ selected, onSelect, presets: presetsProp, loc
           <p className="cesium-subtitle">
             {isLocal
               ? (location ? `Visible from ${location.label || `${location.lat.toFixed(2)}°, ${location.lon.toFixed(2)}°`}` : 'Pick a location below…')
-              : 'All human-spaceflight satellites, global'}
+              : 'All CubeSats, global'}
           </p>
         </div>
       </div>
@@ -441,7 +444,7 @@ export default function HsfGlobe({ selected, onSelect, presets: presetsProp, loc
             )}
           </div>
           <div className="cesium-chip-row">
-            {[...CATEGORY_ORDER, 'Other'].filter((c) => categoryCounts[c] > 0).map((c) => (
+            {[...CATEGORY_ORDER].filter((c) => categoryCounts[c] > 0).map((c) => (
               <button
                 key={c}
                 className={`legend regime-chip category-chip ${categoryFilter[c] ? '' : 'off'}`}
@@ -472,7 +475,7 @@ export default function HsfGlobe({ selected, onSelect, presets: presetsProp, loc
       </div>
 
       {error && status === 'offline' && <div className="cesium-overlay cesium-status" style={{ top: 96, color: '#ffae5e' }}>{error}</div>}
-      {!data && !error && <div className="cesium-overlay cesium-status" style={{ top: 96 }}>Fetching live human-spaceflight-satellite catalog and propagating orbits (SGP4)…</div>}
+      {!data && !error && <div className="cesium-overlay cesium-status" style={{ top: 96 }}>Fetching live CubeSat catalog and propagating orbits (SGP4)…</div>}
 
       {showOrbits && (
         <div className="cesium-overlay cesium-orbit-btn">

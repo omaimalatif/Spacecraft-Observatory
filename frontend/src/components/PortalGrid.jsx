@@ -38,6 +38,7 @@ const PORTALS = [
   },
   {
     color: '#8FE3C7', title: 'CubeSat & Small Satellites',
+    href: '#/cubesat',
     desc: 'Learn about the new generation of compact, low-cost spacecraft that are making it easier than ever for universities, startups, and small nations to reach orbit.',
   },
 ]

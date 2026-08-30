@@ -1,10 +1,10 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api.js'
-import HsfGlobe, { CATEGORY_COLOR, CATEGORY_ORDER } from './HsfGlobe.jsx'
-import HsfSkyPlot from './HsfSkyPlot.jsx'
+import CubesatGlobe, { CATEGORY_COLOR, CATEGORY_ORDER } from './CubesatGlobe.jsx'
+import CubesatSkyPlot from './CubesatSkyPlot.jsx'
 import LocationSearch from './LocationSearch.jsx'
-import HsfLocationPicker from './HsfLocationPicker.jsx'
+import CubesatLocationPicker from './CubesatLocationPicker.jsx'
 import PortalMenu from './PortalMenu.jsx'
 
 const fmt = (n) => n == null ? 'Data unavailable' : new Intl.NumberFormat().format(n)
@@ -102,7 +102,7 @@ function AvailabilityPanel({ onSelect, presets, location, onLocationChange }) {
   const setLocation = onLocationChange
 
   useEffect(() => {
-    api.humanSpaceflightSatGlobeObjects().then((data) => setGlobalObjects(data.objects || [])).catch(() => setGlobalObjects([]))
+    api.cubesatGlobeObjects().then((data) => setGlobalObjects(data.objects || [])).catch(() => setGlobalObjects([]))
   }, [])
 
   const visibleNoradIds = new Set((availability?.satellites || []).map((satellite) => satellite.norad_id))
@@ -114,7 +114,7 @@ function AvailabilityPanel({ onSelect, presets, location, onLocationChange }) {
     if (!location) return
     setLoading(true)
     setError(null)
-    api.humanSpaceflightSatAvailability({ lat: location.lat, lon: location.lon, minElevation: mask })
+    api.cubesatAvailability({ lat: location.lat, lon: location.lon, minElevation: mask })
       .then(setAvailability)
       .catch((err) => setError(err.message || 'Could not compute availability'))
       .finally(() => setLoading(false))
@@ -146,18 +146,18 @@ function AvailabilityPanel({ onSelect, presets, location, onLocationChange }) {
             showCoordinates
           />
           <p className="map-hint">Or click anywhere on the map to check that exact point:</p>
-          <HsfLocationPicker lat={location?.lat} lon={location?.lon} onPick={setLocation} satellites={mapSatellites} />
+          <CubesatLocationPicker lat={location?.lat} lon={location?.lon} onPick={setLocation} satellites={mapSatellites} />
           {location && !location.label && (
             <p className="loading-hint">Selected point: {location.lat.toFixed(3)}°, {location.lon.toFixed(3)}°</p>
           )}
-          {loading && !availability && <p className="loading-hint">Propagating human-spaceflight-satellite orbits for this location (SGP4)…</p>}
+          {loading && !availability && <p className="loading-hint">Propagating CubeSat orbits for this location (SGP4)…</p>}
           {error && <p className="loading-hint" style={{ color: '#ffae5e' }}>{error}</p>}
       </article>
 
       <div className="availability-right-column">
         {availability && location && (
           <section className="skyplot-section">
-            <HsfSkyPlot
+            <CubesatSkyPlot
               satellites={availability.satellites}
               mask={mask}
               onMaskChange={setMask}
@@ -171,7 +171,7 @@ function AvailabilityPanel({ onSelect, presets, location, onLocationChange }) {
 
       <article className="panel availability-results" id="availability">
           <p className="eyebrow">SATELLITE VISIBILITY</p>
-          <h2>Human-spaceflight satellites above the horizon</h2>
+          <h2>CubeSats above the horizon</h2>
           {!availability ? (
             <p className="loading-hint">Waiting for a location visibility result…</p>
           ) : (
@@ -234,7 +234,7 @@ function ServiceInfoGrid({ serviceInfo }) {
   )
 }
 
-export default function HumanSpaceflightDashboard() {
+export default function CubesatDashboard() {
   const [overview, setOverview] = useState(null)
   const [error, setError] = useState(null)
   const [serviceInfo, setServiceInfo] = useState(null)
@@ -243,23 +243,6 @@ export default function HumanSpaceflightDashboard() {
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
 
-  // Real-time ISS position + current crew roster — Open Notify, the same
-  // small live feed already used elsewhere in the app. Polled independently
-  // of the SGP4 catalog data above so a slow/failed CelesTrak fetch never
-  // blocks this from showing.
-  const [issNow, setIssNow] = useState(null)
-  const [people, setPeople] = useState(null)
-  useEffect(() => {
-    let cancelled = false
-    function pollIss() {
-      api.issNow().then((d) => { if (!cancelled) setIssNow(d) }).catch(() => {})
-    }
-    pollIss()
-    const id = setInterval(pollIss, 10000)
-    return () => { cancelled = true; clearInterval(id) }
-  }, [])
-  useEffect(() => { api.peopleInSpace().then(setPeople).catch(() => {}) }, [])
-
   // Observer location is owned at the portal level and shared by the Cesium
   // 3D view and the availability map/sky-plot below, so picking a place in
   // either one (search, preset dropdown, or clicking the map) updates both.
@@ -267,10 +250,10 @@ export default function HumanSpaceflightDashboard() {
   const [location, setLocation] = useState(null)
 
   useEffect(() => {
-    api.humanSpaceflightSatOverview()
+    api.cubesatOverview()
       .then(setOverview)
-      .catch((err) => setError(err.message || 'Could not load live human-spaceflight-satellite catalog'))
-    api.humanSpaceflightSatServiceInfo().then(setServiceInfo).catch(() => setServiceInfo(null))
+      .catch((err) => setError(err.message || 'Could not load live CubeSat catalog'))
+    api.cubesatServiceInfo().then(setServiceInfo).catch(() => setServiceInfo(null))
     api.locationPresetsGlobal().then((d) => {
       setPresets(d.presets || [])
       if (d.default) setLocation(d.default)
@@ -287,7 +270,7 @@ export default function HumanSpaceflightDashboard() {
     if (!query.trim()) return
     setSearching(true)
     try {
-      const r = await api.humanSpaceflightSatSatellites({ q: query })
+      const r = await api.cubesatSatellites({ q: query })
       setResults(r.satellites || [])
       if (r.satellites?.[0]) setSelected(fromSatelliteResult(r.satellites[0]))
     } catch {
@@ -298,22 +281,22 @@ export default function HumanSpaceflightDashboard() {
   }
 
   return (
-    <main className="assets-page hsf-page">
+    <main className="assets-page cubesat-page">
       <header className="assets-header">
         <a href="#" className="wordmark"><img className="assets-brand-logo" src="/ncgsa-logo.png" alt="NCGSA logo" /><strong>NSO</strong><small>SPACECRAFT OBSERVATORY</small></a>
         <nav>
           <a href="#">← Observatory home</a>
           <PortalMenu />
-          <a className="active">07 Human Spaceflight</a>
+          <a className="active">08 CubeSat</a>
         </nav>
         <span className="live-badge" role="status"><i /> LIVE</span>
       </header>
 
       <section className="assets-intro">
         <div>
-          <p className="eyebrow">PORTAL 07</p>
-          <h1>Human <em>Spaceflight Tracking</em></h1>
-          <p>Track the crewed space stations and the vehicles that support them, live. The International Space Station, China's Tiangong, and the current crew/cargo spacecraft (Crew Dragon, Soyuz, Progress, Cygnus, Shenzhou, Tianzhou) — all from CelesTrak's single official space-stations group — inspect their orbital parameters, follow their positions around Earth, and check which are visible from any location.</p>
+          <p className="eyebrow">PORTAL 08</p>
+          <h1>CubeSat <em>&amp; Small Satellites</em></h1>
+          <p>Explore the new generation of compact, low-cost spacecraft built by universities, startups and space agencies — all from CelesTrak's single official CubeSat group. Unlike other portals, CubeSat missions share no common naming convention, so the breakdown below groups them by their own computed orbital altitude band instead of a guessed operator family. Inspect their orbital parameters, follow their positions around Earth, and check which are visible from any location.</p>
         </div>
         <div className="update-note">
           {error ? error : overview?.updated_at ? `Last refreshed ${new Date(overview.updated_at).toLocaleString()}` : 'Connecting to CelesTrak'}
@@ -321,36 +304,13 @@ export default function HumanSpaceflightDashboard() {
         </div>
       </section>
 
-      <section className="crew-strip">
-        <article className="panel crew-card">
-          <p className="eyebrow">LIVE — OPEN NOTIFY</p>
-          <h3>ISS position right now</h3>
-          {issNow ? (
-            <div className="crew-card-grid">
-              <label>Latitude<b>{Number(issNow.iss_position.latitude).toFixed(2)}°</b></label>
-              <label>Longitude<b>{Number(issNow.iss_position.longitude).toFixed(2)}°</b></label>
-              <label>As of<b>{new Date(issNow.timestamp * 1000).toLocaleTimeString()}</b></label>
-            </div>
-          ) : <p className="loading-hint">Fetching current ISS position…</p>}
-        </article>
-        <article className="panel crew-card">
-          <p className="eyebrow">LIVE — OPEN NOTIFY</p>
-          <h3>{people ? `${people.number} people currently in space` : 'People currently in space'}</h3>
-          {people ? (
-            <div className="crew-list">
-              {people.people.map((p) => <span key={p.name}>{p.name} <small>· {p.craft}</small></span>)}
-            </div>
-          ) : <p className="loading-hint">Fetching current crew roster…</p>}
-        </article>
-      </section>
-
       <section className="command-grid">
         <article className="globe-card panel">
           <div className="panel-head">
-            <div><p className="eyebrow">SATELLITE FAMILY 3D ORBITS · CESIUM</p><h2>Crewed stations &amp; spacecraft around Earth</h2></div>
-            <span>Live SGP4-propagated positions, colored by family</span>
+            <div><p className="eyebrow">SATELLITE ALTITUDE-BAND 3D ORBITS · CESIUM</p><h2>CubeSats around Earth</h2></div>
+            <span>Live SGP4-propagated positions, colored by altitude band</span>
           </div>
-          <HsfGlobe
+          <CubesatGlobe
             selected={selected}
             onSelect={(o) => setSelected(fromGlobePoint(o))}
             presets={presets}
@@ -368,8 +328,8 @@ export default function HumanSpaceflightDashboard() {
       <section id="breakdown" className="snapshot">
         <div className="section-title">
           <p className="eyebrow">CATEGORY BREAKDOWN</p>
-          <h2>Satellites per human-spaceflight family</h2>
-          <span>Classified human-spaceflight satellite inventory</span>
+          <h2>CubeSats per altitude band</h2>
+          <span>Classified by each CubeSat's own orbital altitude</span>
         </div>
         <div className="snapshot-grid">
           <article className="panel chart-card">
@@ -377,8 +337,8 @@ export default function HumanSpaceflightDashboard() {
             <BarChart data={categoryBars} />
           </article>
           <article id="sources" className="panel search-card nav-search-card">
-            <p className="eyebrow">HUMAN SPACEFLIGHT SATELLITE SEARCH</p>
-            <h2>Locate a human-spaceflight satellite</h2>
+            <p className="eyebrow">CUBESAT SEARCH</p>
+            <h2>Locate a CubeSat</h2>
             <form onSubmit={submitSearch}>
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name or NORAD ID…" />
               <button>{searching ? 'Searching…' : 'Search'}</button>
@@ -406,9 +366,7 @@ export default function HumanSpaceflightDashboard() {
       </section>
 
       <footer className="assets-footer">
-        Data attribution: <a href="https://celestrak.org/" target="_blank" rel="noreferrer">CelesTrak GP data</a> (GROUP=stations; family labels derived by name-pattern within that group) ·
-        Reference specs: NASA, China Manned Space Agency, Roscosmos and Northrop Grumman official sites ·
-        Real-time ISS position & current crew roster (Open Notify) shown below ·
+        Data attribution: <a href="https://celestrak.org/" target="_blank" rel="noreferrer">CelesTrak GP data</a> (GROUP=cubesat; altitude bands computed from each satellite's own orbital elements, not a name guess) ·
         Live data is cached server-side for up to 5 minutes. Values marked "Data unavailable" require a compatible authoritative source connection.
       </footer>
     </main>

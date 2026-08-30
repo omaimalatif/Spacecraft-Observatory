@@ -1,18 +1,18 @@
-/* Portal 07 reuses the Portal 01 dashboard skeleton (assets-theme.css) and
-   the Portal 03/04/05/06 satellite-tracking layout, with the same amber
-   accent Human Spaceflight already carries in PortalGrid (#FFB454). Every
-   selector here is scoped under .hsf-page; the shared unscoped rules
+/* Portal 04 reuses the Portal 01 dashboard skeleton (assets-theme.css) and the
+   Portal 03 (Navigation) satellite-tracking layout, with an amber accent
+   instead of magenta — matching this portal's own PortalGrid color (#FFB454).
+   Every selector here is scoped under .hsf-page; the shared unscoped rules
    (skyplot toolbar, world-picker map, service-info cards, etc.) already come
    from nav-theme.css and apply as-is. */
 .hsf-page .assets-intro .eyebrow,
 .hsf-page .section-title .eyebrow,
-.hsf-page .panel-head .eyebrow { color: #ffb454; }
-.hsf-page .assets-header .wordmark .mark { color: #ffb454; text-shadow: 0 0 16px #ffb454; }
+.hsf-page .panel-head .eyebrow { color: #FFB454; }
+.hsf-page .assets-header .wordmark .mark { color: #FFB454; text-shadow: 0 0 16px #FFB454; }
 .hsf-page .assets-header nav a.active { color: #ffedd1; }
 .hsf-page .asset-kpis article::after { background: rgba(255, 180, 84, .72); }
-.hsf-page .bar-track i { background: linear-gradient(90deg, #7a5220, #ffb454); }
-.hsf-page .search-card form button { background: #ffb454; color: #2a1c0a; }
-.hsf-page .cesium-orbit-btn .legend { border-color: #ffb454; }
+.hsf-page .bar-track i { background: linear-gradient(90deg, #7a5220, #FFB454); }
+.hsf-page .search-card form button { background: #FFB454; color: #2a1c0a; }
+.hsf-page .cesium-orbit-btn .legend { border-color: #FFB454; }
 .hsf-page .cesium-title { color: #ffedd1; }
 .hsf-page .cesium-cam-controls .skyplot-action { padding: 5px 10px; font-size: 9px; }
 
@@ -75,11 +75,11 @@
 .hsf-page .nav-search-card h2 { font-size: 17px; margin-bottom: 12px; }
 .hsf-page .nav-search-card form { display: flex; gap: 7px; }
 .hsf-page .nav-search-card form input { min-width: 0; width: 100%; }
-.hsf-page .nav-search-card form button { padding: 0 11px; background: #ffb454; color: #2a1c0a; }
+.hsf-page .nav-search-card form button { padding: 0 11px; background: #FFB454; color: #2a1c0a; }
 .hsf-page .nav-search-card .search-results { max-height: 150px; overflow-y: auto; }
 
 /* --- Service-info card top accent + link color (structure shared, color scoped) --- */
-.hsf-page .service-card a { color: #ffb454; border-bottom: 1px dotted rgba(255, 180, 84, .5); }
+.hsf-page .service-card a { color: #FFB454; border-bottom: 1px dotted rgba(255, 180, 84, .5); }
 .hsf-page .service-card a:hover { color: #ffedd1; }
 
 @media (max-width: 900px) {
@@ -95,15 +95,16 @@
   .hsf-page #availability .country-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* --- "Who's in space right now" crew panel (unique to this portal) --- */
-.hsf-page .crew-panel { margin: 0 0 22px; padding: 16px 18px; }
-.hsf-page .crew-panel h2 { margin: 2px 0 6px; font-size: 18px; }
-.hsf-page .crew-iss-note { margin: 0 0 10px; color: #cddce3; font: 11px 'JetBrains Mono'; }
-.hsf-page .crew-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.hsf-page .crew-chip {
-  display: flex; flex-direction: column; gap: 2px; padding: 7px 11px; border-radius: 6px;
-  border: 1px solid rgba(255, 180, 84, .3); background: rgba(255, 180, 84, .07); min-width: 130px;
+/* --- Live ISS position / crew roster strip (Open Notify) --- */
+.hsf-page .crew-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.hsf-page .crew-card { padding: 16px 18px; }
+.hsf-page .crew-card h3 { font-size: 15px; margin: 4px 0 10px; color: #ffedd1; }
+.hsf-page .crew-card-grid { display: flex; gap: 22px; flex-wrap: wrap; }
+.hsf-page .crew-card-grid label { display: flex; flex-direction: column; gap: 3px; font: 10px 'JetBrains Mono'; color: #7698a8; text-transform: uppercase; letter-spacing: .3px; }
+.hsf-page .crew-card-grid label b { font: 700 15px 'JetBrains Mono'; color: #e9f4fa; }
+.hsf-page .crew-list { display: flex; flex-direction: column; gap: 6px; }
+.hsf-page .crew-list span { font: 12px Inter; color: #d9edf4; }
+.hsf-page .crew-list span small { color: #7698a8; font-family: 'JetBrains Mono'; }
+@media (max-width: 900px) {
+  .hsf-page .crew-strip { grid-template-columns: 1fr; }
 }
-.hsf-page .crew-chip b { font-size: 12px; color: #ffedd1; }
-.hsf-page .crew-chip span { font: 10px 'JetBrains Mono'; color: #9fb3bd; text-transform: uppercase; letter-spacing: .3px; }
-.hsf-page .crew-source { margin: 12px 0 0; color: #7698a8; font-size: 10px; }

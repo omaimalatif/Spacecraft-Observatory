@@ -8,7 +8,7 @@ const PORTALS = [
   { title: 'Meteorological & Environmental', href: '#/meteorological' },
   { title: 'Live Space Science Tracking', href: '#/space-science' },
   { title: 'Human Spaceflight', href: '#/human-spaceflight' },
-  { title: 'CubeSat & Small Satellites', href: null },
+  { title: 'CubeSat & Small Satellites', href: '#/cubesat' },
 ]
 
 export default function PortalMenu() {

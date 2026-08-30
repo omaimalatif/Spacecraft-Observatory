@@ -17,7 +17,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.routers import space_assets, visibility, human_spaceflight, navigation, earth_observation, location, space_science, communication, sci_satellites, meteorological
+from app.routers import space_assets, visibility, human_spaceflight, navigation, earth_observation, location, space_science, communication, sci_satellites, meteorological, human_spaceflight_sat, cubesat
 from app.services.celestrak import close_client, warmup_catalog
 from app.services.satcat import close_client as close_satcat_client, warmup as warmup_satcat
 
@@ -97,5 +97,8 @@ app.include_router(communication.router, prefix="/api/communication", tags=["04 
 # Portal 05 — Meteorological & Environmental Satellites (CelesTrak GROUP=weather)
 app.include_router(meteorological.router, prefix="/api/meteorological", tags=["05 · Meteorological"])
 
-# Portal 08 follows the exact same pattern — see backend/README section
-# "Adding a portal route" for the CelesTrak group / source to wire up next.
+# Portal 07 add-on — Human Spaceflight satellite tracking (CelesTrak GROUP=stations)
+app.include_router(human_spaceflight_sat.router, prefix="/api/human-spaceflight-sat", tags=["07 · Human Spaceflight (satellites)"])
+
+# Portal 08 — CubeSat & Small Satellites (CelesTrak GROUP=cubesat)
+app.include_router(cubesat.router, prefix="/api/cubesat", tags=["08 · CubeSat"])

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { api } from '../api.js'
-import { CATEGORY_COLOR, CATEGORY_ORDER } from './HsfGlobe.jsx'
+import { CATEGORY_COLOR, CATEGORY_ORDER } from './CubesatGlobe.jsx'
 
 const MASK_PRESETS = [0, 5, 10, 15, 20]
 const SIZE = 480
@@ -233,7 +233,7 @@ function Globe3D({ satellites, tracks, onSelect, showLabels, showLOS, showOrbits
   return <div className="skyplot-globe3d" ref={mountRef} aria-label="Interactive 3D Earth sky plot" />
 }
 
-export default function HsfSkyPlot({ satellites, mask, onMaskChange, catalogSize, location, onSelect }) {
+export default function CubesatSkyPlot({ satellites, mask, onMaskChange, catalogSize, location, onSelect }) {
   const [mode, setMode] = useState('2D')
   const [categoryFilter, setCategoryFilter] = useState(
     Object.fromEntries([...CATEGORY_ORDER, 'Other'].map((c) => [c, true]))
@@ -288,7 +288,7 @@ export default function HsfSkyPlot({ satellites, mask, onMaskChange, catalogSize
     if (!showOrbits || !location) { setTracks(null); setTracksState('idle'); return }
     let cancelled = false
     setTracksState('loading')
-    api.humanSpaceflightSatSkyTracks({ lat: location.lat, lon: location.lon, minElevation: mask, windowMin: 25 })
+    api.cubesatSkyTracks({ lat: location.lat, lon: location.lon, minElevation: mask, windowMin: 25 })
       .then((result) => { if (!cancelled) { setTracks(result.tracks); setTracksState('done') } })
       .catch(() => { if (!cancelled) { setTracks(null); setTracksState('error') } })
     return () => { cancelled = true }

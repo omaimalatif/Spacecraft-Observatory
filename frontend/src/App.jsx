@@ -11,6 +11,7 @@ import SpaceScienceSatellites from './components/SpaceScienceSatellites.jsx'
 import CommunicationDashboard from './components/CommunicationDashboard.jsx'
 import MeteorologicalDashboard from './components/MeteorologicalDashboard.jsx'
 import HumanSpaceflightDashboard from './components/HumanSpaceflightDashboard.jsx'
+import CubesatDashboard from './components/CubesatDashboard.jsx'
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash)
@@ -32,7 +33,8 @@ export default function App() {
          route === '#/space-science' || route === '#/space-science-satellites' ? <SpaceScienceSatellites /> :
          route === '#/communication' ? <CommunicationDashboard /> :
          route === '#/meteorological' ? <MeteorologicalDashboard /> :
-         route === '#/human-spaceflight' ? <HumanSpaceflightDashboard /> : <>
+         route === '#/human-spaceflight' ? <HumanSpaceflightDashboard /> :
+         route === '#/cubesat' ? <CubesatDashboard /> : <>
           <Hero />
           <PortalGrid />
           <VisibilityExplorer />

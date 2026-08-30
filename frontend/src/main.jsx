@@ -11,6 +11,7 @@ import './styles/sat-portal-shared.css'
 import './styles/comm-theme.css'
 import './styles/meteo-theme.css'
 import './styles/hsf-theme.css'
+import './styles/cubesat-theme.css'
 import './styles/scisat-theme.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(

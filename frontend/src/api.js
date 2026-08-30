@@ -1,15 +1,33 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const REQUEST_TIMEOUT_MS = 25000 // a stalled backend/upstream call fails cleanly instead of hanging the UI forever
 
-async function get(path) {
+async function fetchWithTimeout(url) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  try {
+    return await fetch(url, { signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function get(path, { retry = true } = {}) {
   let res
   try {
-    res = await fetch(`${API_BASE}${path}`)
+    res = await fetchWithTimeout(`${API_BASE}${path}`)
   } catch (err) {
-    // fetch itself throws on network failure (backend not running, wrong
-    // port, actual CORS block) — distinguish that from a backend error reply
-    throw new Error(`Could not reach the backend at ${API_BASE}${path} — is it running? (${err.message})`)
+    // Network failure or timeout — retry once (covers a transient blip)
+    // before surfacing an error, since a single dropped request shouldn't
+    // make an otherwise-working backend look "blocked".
+    if (retry) return get(path, { retry: false })
+    const reason = err.name === 'AbortError' ? `timed out after ${REQUEST_TIMEOUT_MS / 1000}s` : err.message
+    throw new Error(`Could not reach the backend at ${API_BASE}${path} — is it running? (${reason})`)
   }
   if (!res.ok) {
+    // 502/503/504 are frequently transient (upstream rate-limited a single
+    // request) — one retry avoids surfacing a failure the very next request
+    // would have avoided.
+    if (retry && [502, 503, 504].includes(res.status)) return get(path, { retry: false })
     let detail = res.statusText
     try {
       const body = await res.json()
@@ -41,25 +59,6 @@ export const api = {
   locationSearchGlobal: (q) => get(`/api/location/search-global?q=${encodeURIComponent(q)}`),
   issNow: () => get('/api/human-spaceflight/iss-now'),
   peopleInSpace: () => get('/api/human-spaceflight/people-in-space'),
-  humanSpaceflightOverview: () => get('/api/human-spaceflight/overview'),
-  humanSpaceflightCategories: () => get('/api/human-spaceflight/categories'),
-  humanSpaceflightSatellites: ({ category, q, limit = 500 } = {}) => {
-    const params = new URLSearchParams()
-    if (category) params.set('category', category)
-    if (q) params.set('q', q)
-    if (limit) params.set('limit', limit)
-    return get(`/api/human-spaceflight/satellites?${params.toString()}`)
-  },
-  humanSpaceflightGlobeObjects: () => get('/api/human-spaceflight/globe-objects'),
-  humanSpaceflightOrbitPath: (noradId) => get(`/api/human-spaceflight/orbit-path/${noradId}`),
-  humanSpaceflightOrbitPaths: () => get('/api/human-spaceflight/orbit-paths'),
-  humanSpaceflightAvailability: ({ lat, lon, minElevation = 10 }) =>
-    get(`/api/human-spaceflight/availability?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}`),
-  humanSpaceflightServiceInfo: () => get('/api/human-spaceflight/service-info'),
-  humanSpaceflightSkyTrack: (noradId, { lat, lon, windowMin = 60 }) =>
-    get(`/api/human-spaceflight/sky-track/${noradId}?lat=${lat}&lon=${lon}&window_min=${windowMin}`),
-  humanSpaceflightSkyTracks: ({ lat, lon, minElevation = 10, windowMin = 25 }) =>
-    get(`/api/human-spaceflight/sky-tracks?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}&window_min=${windowMin}`),
   navigationConstellations: () => get('/api/navigation/constellations'),
   navigationOverview: () => get('/api/navigation/overview'),
   navigationSatellites: ({ constellation, q, limit = 500 } = {}) => {
@@ -133,6 +132,48 @@ export const api = {
     get(`/api/meteorological/sky-track/${noradId}?lat=${lat}&lon=${lon}&window_min=${windowMin}`),
   meteorologicalSkyTracks: ({ lat, lon, minElevation = 10, windowMin = 25 }) =>
     get(`/api/meteorological/sky-tracks?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}&window_min=${windowMin}`),
+
+  // Portal 07 add-on — Human Spaceflight satellites (CelesTrak GROUP=stations)
+  humanSpaceflightSatOverview: () => get('/api/human-spaceflight-sat/overview'),
+  humanSpaceflightSatCategories: () => get('/api/human-spaceflight-sat/categories'),
+  humanSpaceflightSatSatellites: ({ category, q, limit = 500 } = {}) => {
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (q) params.set('q', q)
+    if (limit) params.set('limit', limit)
+    return get(`/api/human-spaceflight-sat/satellites?${params.toString()}`)
+  },
+  humanSpaceflightSatGlobeObjects: () => get('/api/human-spaceflight-sat/globe-objects'),
+  humanSpaceflightSatOrbitPath: (noradId) => get(`/api/human-spaceflight-sat/orbit-path/${noradId}`),
+  humanSpaceflightSatOrbitPaths: () => get('/api/human-spaceflight-sat/orbit-paths'),
+  humanSpaceflightSatAvailability: ({ lat, lon, minElevation = 10 }) =>
+    get(`/api/human-spaceflight-sat/availability?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}`),
+  humanSpaceflightSatServiceInfo: () => get('/api/human-spaceflight-sat/service-info'),
+  humanSpaceflightSatSkyTrack: (noradId, { lat, lon, windowMin = 60 }) =>
+    get(`/api/human-spaceflight-sat/sky-track/${noradId}?lat=${lat}&lon=${lon}&window_min=${windowMin}`),
+  humanSpaceflightSatSkyTracks: ({ lat, lon, minElevation = 10, windowMin = 25 }) =>
+    get(`/api/human-spaceflight-sat/sky-tracks?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}&window_min=${windowMin}`),
+
+  // Portal 08 — CubeSat & Small Satellites (CelesTrak GROUP=cubesat)
+  cubesatOverview: () => get('/api/cubesat/overview'),
+  cubesatCategories: () => get('/api/cubesat/categories'),
+  cubesatSatellites: ({ category, q, limit = 500 } = {}) => {
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (q) params.set('q', q)
+    if (limit) params.set('limit', limit)
+    return get(`/api/cubesat/satellites?${params.toString()}`)
+  },
+  cubesatGlobeObjects: () => get('/api/cubesat/globe-objects'),
+  cubesatOrbitPath: (noradId) => get(`/api/cubesat/orbit-path/${noradId}`),
+  cubesatOrbitPaths: () => get('/api/cubesat/orbit-paths'),
+  cubesatAvailability: ({ lat, lon, minElevation = 10 }) =>
+    get(`/api/cubesat/availability?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}`),
+  cubesatServiceInfo: () => get('/api/cubesat/service-info'),
+  cubesatSkyTrack: (noradId, { lat, lon, windowMin = 60 }) =>
+    get(`/api/cubesat/sky-track/${noradId}?lat=${lat}&lon=${lon}&window_min=${windowMin}`),
+  cubesatSkyTracks: ({ lat, lon, minElevation = 10, windowMin = 25 }) =>
+    get(`/api/cubesat/sky-tracks?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}&window_min=${windowMin}`),
 
   // Portal 06 add-on — Space Science satellites (CelesTrak GROUP=science)
   spaceScienceSatOverview: () => get('/api/space-science-sat/overview'),
