@@ -1,0 +1,96 @@
+/* Portal 04 reuses the Portal 01 dashboard skeleton (assets-theme.css) and the
+   Portal 03 (Navigation) satellite-tracking layout, with an amber accent
+   instead of magenta — matching this portal's own PortalGrid color (#FFB454).
+   Every selector here is scoped under .comm-page; the shared unscoped rules
+   (skyplot toolbar, world-picker map, service-info cards, etc.) already come
+   from nav-theme.css and apply as-is. */
+.comm-page .assets-intro .eyebrow,
+.comm-page .section-title .eyebrow,
+.comm-page .panel-head .eyebrow { color: #ffb454; }
+.comm-page .assets-header .wordmark .mark { color: #ffb454; text-shadow: 0 0 16px #ffb454; }
+.comm-page .assets-header nav a.active { color: #ffedd1; }
+.comm-page .asset-kpis article::after { background: rgba(255, 180, 84, .72); }
+.comm-page .bar-track i { background: linear-gradient(90deg, #7a5220, #ffb454); }
+.comm-page .search-card form button { background: #ffb454; color: #2a1c0a; }
+.comm-page .cesium-orbit-btn .legend { border-color: #ffb454; }
+.comm-page .cesium-title { color: #ffedd1; }
+.comm-page .cesium-cam-controls .skyplot-action { padding: 5px 10px; font-size: 9px; }
+
+/* --- Compact command view (mirrors .nav-page) --- */
+.comm-page .assets-intro { padding: 30px 0 22px; }
+.comm-page .assets-intro h1 { font-size: clamp(34px, 3.8vw, 52px); letter-spacing: -2px; line-height: .95; }
+.comm-page .assets-intro p:not(.eyebrow) { max-width: 560px; font-size: 12px; line-height: 1.45; }
+.comm-page .command-grid { grid-template-columns: minmax(0, 1.7fr) minmax(280px, .72fr); margin-top: 16px; }
+.comm-page .globe-card { min-height: 0; }
+.comm-page .globe-card .panel-head { padding: 15px 17px 11px; }
+.comm-page .globe-card .panel-head h2 { font-size: 18px; }
+.comm-page .cesium-globe-wrap { height: 460px; }
+
+.comm-page .profile-panel { min-height: 0; height: fit-content; padding: 18px; }
+.comm-page .profile-empty { height: auto; min-height: 0; padding: 12px 8px; }
+.comm-page .profile-grid { gap: 10px 8px; }
+.comm-page .profile-note { margin-top: 16px; padding-top: 11px; }
+.comm-page .snapshot { margin-top: 28px; }
+.comm-page .snapshot-grid { align-items: start; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.comm-page .snapshot-grid .chart-card,
+.comm-page .snapshot-grid .search-card { min-height: 0; padding: 16px; }
+.comm-page .snapshot-grid .chart-card h3 { margin-bottom: 16px; }
+
+/* --- Availability panel text/accents --- */
+.comm-page #availability .country-list { gap: 9px; margin: 16px 0 4px; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.comm-page #availability .country-list li {
+  padding: 9px 11px; border: 1px solid rgba(187, 222, 240, .14); border-left: 2px solid currentColor;
+  border-radius: 4px; background: rgba(8, 24, 35, .58);
+  box-shadow: inset 0 1px rgba(220, 248, 255, .04), 0 8px 18px -16px rgba(255, 180, 84, .8);
+}
+.comm-page #availability .country-list li b { color: #fff3e2; }
+.comm-page .availability-results { padding: 9px 12px; }
+.comm-page .availability-results h2 { font-size: 14px; margin-bottom: 4px; }
+.comm-page .availability-results .avail-headline { margin: 4px 0 3px; }
+.comm-page .availability-results .avail-headline b { font-size: 22px; color: #ffedd1; }
+.comm-page .availability-results .country-list { gap: 3px; margin: 5px 0 0; }
+.comm-page .availability-results .country-list li { padding: 4px 7px; }
+.comm-page .availability-results .visibility-group {
+  border: 1px solid rgba(187, 222, 240, .14); border-left: 2px solid currentColor;
+  border-radius: 4px; background: rgba(8, 24, 35, .58); overflow: hidden;
+}
+.comm-page .availability-results .visibility-group summary {
+  display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 4px 8px; cursor: pointer;
+  list-style-position: inside; font: 600 10px 'JetBrains Mono'; letter-spacing: .35px; text-transform: uppercase;
+}
+.comm-page .availability-results .visibility-group summary::marker { font-size: 9px; }
+.comm-page .availability-results .visibility-group summary b { margin-left: auto; min-width: 2ch; color: #ffedd1; font: 700 12px 'JetBrains Mono'; text-align: right; }
+.comm-page .availability-results .visibility-satellite-list {
+  display: grid; gap: 2px; padding: 3px 6px 6px 22px; border-top: 1px solid rgba(187, 222, 240, .1); background: rgba(3, 12, 18, .34);
+}
+.comm-page .availability-results .visibility-satellite-list button {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 5px 4px; border: 0;
+  border-bottom: 1px solid rgba(187, 222, 240, .07); background: transparent; color: #d9edf4; font: 10px 'JetBrains Mono'; text-align: left; cursor: pointer;
+}
+.comm-page .availability-results .visibility-satellite-list button:last-child { border-bottom: 0; }
+.comm-page .availability-results .visibility-satellite-list button:hover { color: #fff; background: rgba(255, 180, 84, .12); }
+.comm-page .availability-results .visibility-satellite-list button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comm-page .availability-results .visibility-satellite-list button small { margin-left: auto; flex: 0 0 auto; color: #7698a8; font: 9px 'JetBrains Mono'; }
+.comm-page .nav-search-card { min-width: 0; padding: 18px; }
+.comm-page .nav-search-card h2 { font-size: 17px; margin-bottom: 12px; }
+.comm-page .nav-search-card form { display: flex; gap: 7px; }
+.comm-page .nav-search-card form input { min-width: 0; width: 100%; }
+.comm-page .nav-search-card form button { padding: 0 11px; background: #ffb454; color: #2a1c0a; }
+.comm-page .nav-search-card .search-results { max-height: 150px; overflow-y: auto; }
+
+/* --- Service-info card top accent + link color (structure shared, color scoped) --- */
+.comm-page .service-card a { color: #ffb454; border-bottom: 1px dotted rgba(255, 180, 84, .5); }
+.comm-page .service-card a:hover { color: #ffedd1; }
+
+@media (max-width: 900px) {
+  .comm-page #availability .country-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 1150px) {
+  .comm-page .command-grid { grid-template-columns: 1fr; }
+  .comm-page .snapshot-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 680px) {
+  .comm-page .cesium-globe-wrap { height: 400px; }
+  .comm-page .cesium-controls { max-width: 92%; }
+  .comm-page #availability .country-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

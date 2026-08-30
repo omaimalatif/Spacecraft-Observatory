@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 
 const PORTALS = [
   { title: 'Global Space Assets', href: '#/global-space-assets' },
-  { title: 'Earth Observation', href: '#/earth-observation' },
+  { title: 'Earth Observation Satellites', href: '#/earth-observation' },
   { title: 'Navigation Systems', href: '#/navigation-systems' },
   { title: 'Communication', href: '#portals' },
   { title: 'Meteorological & Environmental', href: '#portals' },
-  { title: 'Space Science & Exploration', href: '#/space-science' },
+  { title: 'Live Space Science Tracking', href: '#/space-science' },
   { title: 'Human Spaceflight', href: '#portals' },
   { title: 'CubeSat & Small Satellites', href: '#portals' },
 ]

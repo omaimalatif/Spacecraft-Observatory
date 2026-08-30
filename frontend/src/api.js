@@ -41,6 +41,25 @@ export const api = {
   locationSearchGlobal: (q) => get(`/api/location/search-global?q=${encodeURIComponent(q)}`),
   issNow: () => get('/api/human-spaceflight/iss-now'),
   peopleInSpace: () => get('/api/human-spaceflight/people-in-space'),
+  humanSpaceflightOverview: () => get('/api/human-spaceflight/overview'),
+  humanSpaceflightCategories: () => get('/api/human-spaceflight/categories'),
+  humanSpaceflightSatellites: ({ category, q, limit = 500 } = {}) => {
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (q) params.set('q', q)
+    if (limit) params.set('limit', limit)
+    return get(`/api/human-spaceflight/satellites?${params.toString()}`)
+  },
+  humanSpaceflightGlobeObjects: () => get('/api/human-spaceflight/globe-objects'),
+  humanSpaceflightOrbitPath: (noradId) => get(`/api/human-spaceflight/orbit-path/${noradId}`),
+  humanSpaceflightOrbitPaths: () => get('/api/human-spaceflight/orbit-paths'),
+  humanSpaceflightAvailability: ({ lat, lon, minElevation = 10 }) =>
+    get(`/api/human-spaceflight/availability?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}`),
+  humanSpaceflightServiceInfo: () => get('/api/human-spaceflight/service-info'),
+  humanSpaceflightSkyTrack: (noradId, { lat, lon, windowMin = 60 }) =>
+    get(`/api/human-spaceflight/sky-track/${noradId}?lat=${lat}&lon=${lon}&window_min=${windowMin}`),
+  humanSpaceflightSkyTracks: ({ lat, lon, minElevation = 10, windowMin = 25 }) =>
+    get(`/api/human-spaceflight/sky-tracks?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}&window_min=${windowMin}`),
   navigationConstellations: () => get('/api/navigation/constellations'),
   navigationOverview: () => get('/api/navigation/overview'),
   navigationSatellites: ({ constellation, q, limit = 500 } = {}) => {
@@ -65,8 +84,74 @@ export const api = {
   earthObservationFires: (bbox = 'world') => get(`/api/earth-observation/fires?bbox=${encodeURIComponent(bbox)}`),
   earthObservationSatellites: () => get('/api/earth-observation/satellites'),
   earthObservationStatus: () => get('/api/earth-observation/status'),
+  earthObservationGlobeObjects: () => get('/api/earth-observation/globe-objects'),
+  earthObservationTypes: () => get('/api/earth-observation/types'),
   spaceScienceSolarSystem: () => get('/api/space-science/solar-system'),
   spaceScienceSpacecraft: () => get('/api/space-science/spacecraft'),
   spaceScienceNeo: (days = 7) => get(`/api/space-science/neo?days=${days}`),
   spaceScienceStatus: () => get('/api/space-science/status'),
+
+  // Portal 04 — Communication satellites (CelesTrak Intelsat/SES/Eutelsat/Telesat/
+  // Iridium NEXT/Orbcomm/Globalstar/Amateur groups)
+  communicationOverview: () => get('/api/communication/overview'),
+  communicationCategories: () => get('/api/communication/categories'),
+  communicationSatellites: ({ category, q, limit = 500 } = {}) => {
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (q) params.set('q', q)
+    if (limit) params.set('limit', limit)
+    return get(`/api/communication/satellites?${params.toString()}`)
+  },
+  communicationGlobeObjects: () => get('/api/communication/globe-objects'),
+  communicationOrbitPath: (noradId) => get(`/api/communication/orbit-path/${noradId}`),
+  communicationOrbitPaths: () => get('/api/communication/orbit-paths'),
+  communicationAvailability: ({ lat, lon, minElevation = 10 }) =>
+    get(`/api/communication/availability?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}`),
+  communicationServiceInfo: () => get('/api/communication/service-info'),
+  communicationSkyTrack: (noradId, { lat, lon, windowMin = 60 }) =>
+    get(`/api/communication/sky-track/${noradId}?lat=${lat}&lon=${lon}&window_min=${windowMin}`),
+  communicationSkyTracks: ({ lat, lon, minElevation = 10, windowMin = 25 }) =>
+    get(`/api/communication/sky-tracks?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}&window_min=${windowMin}`),
+
+  // Portal 05 — Meteorological & Environmental satellites (CelesTrak GROUP=weather)
+  meteorologicalOverview: () => get('/api/meteorological/overview'),
+  meteorologicalCategories: () => get('/api/meteorological/categories'),
+  meteorologicalSatellites: ({ category, q, limit = 500 } = {}) => {
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (q) params.set('q', q)
+    if (limit) params.set('limit', limit)
+    return get(`/api/meteorological/satellites?${params.toString()}`)
+  },
+  meteorologicalGlobeObjects: () => get('/api/meteorological/globe-objects'),
+  meteorologicalOrbitPath: (noradId) => get(`/api/meteorological/orbit-path/${noradId}`),
+  meteorologicalOrbitPaths: () => get('/api/meteorological/orbit-paths'),
+  meteorologicalAvailability: ({ lat, lon, minElevation = 10 }) =>
+    get(`/api/meteorological/availability?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}`),
+  meteorologicalServiceInfo: () => get('/api/meteorological/service-info'),
+  meteorologicalSkyTrack: (noradId, { lat, lon, windowMin = 60 }) =>
+    get(`/api/meteorological/sky-track/${noradId}?lat=${lat}&lon=${lon}&window_min=${windowMin}`),
+  meteorologicalSkyTracks: ({ lat, lon, minElevation = 10, windowMin = 25 }) =>
+    get(`/api/meteorological/sky-tracks?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}&window_min=${windowMin}`),
+
+  // Portal 06 add-on — Space Science satellites (CelesTrak GROUP=science)
+  spaceScienceSatOverview: () => get('/api/space-science-sat/overview'),
+  spaceScienceSatCategories: () => get('/api/space-science-sat/categories'),
+  spaceScienceSatSatellites: ({ category, q, limit = 500 } = {}) => {
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (q) params.set('q', q)
+    if (limit) params.set('limit', limit)
+    return get(`/api/space-science-sat/satellites?${params.toString()}`)
+  },
+  spaceScienceSatGlobeObjects: () => get('/api/space-science-sat/globe-objects'),
+  spaceScienceSatOrbitPath: (noradId) => get(`/api/space-science-sat/orbit-path/${noradId}`),
+  spaceScienceSatOrbitPaths: () => get('/api/space-science-sat/orbit-paths'),
+  spaceScienceSatAvailability: ({ lat, lon, minElevation = 10 }) =>
+    get(`/api/space-science-sat/availability?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}`),
+  spaceScienceSatServiceInfo: () => get('/api/space-science-sat/service-info'),
+  spaceScienceSatSkyTrack: (noradId, { lat, lon, windowMin = 60 }) =>
+    get(`/api/space-science-sat/sky-track/${noradId}?lat=${lat}&lon=${lon}&window_min=${windowMin}`),
+  spaceScienceSatSkyTracks: ({ lat, lon, minElevation = 10, windowMin = 25 }) =>
+    get(`/api/space-science-sat/sky-tracks?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}&window_min=${windowMin}`),
 }

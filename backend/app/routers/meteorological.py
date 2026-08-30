@@ -1,18 +1,17 @@
-# Portal 07 — Human Spaceflight.
-# Two independent free sources feed this portal:
-#   - Open Notify (ISS position right now + who's currently in space) — kept
-#     exactly as before.
-#   - CelesTrak GP catalog, GROUP=stations — the crewed space stations
-#     themselves (ISS, Tiangong/CSS modules) plus any visiting crew/cargo
-#     vehicle CelesTrak currently tracks under that same group. Like Portal 05
-#     (Meteorological), CelesTrak bundles this into ONE official group, so
-#     group membership itself is authoritative; the family labels (ISS,
-#     Tiangong / CSS, Crew & Cargo Vehicle) are derived by matching each
-#     object's public name — they can mislabel an object's family, but they
-#     can never smuggle a non-station satellite in, since the upstream group
-#     membership is never touched.
+# Portal 05 — Meteorological & Environmental Satellites.
+# Source: CelesTrak GP catalog, GROUP=weather. Unlike Portal 04 (Communication),
+# where each category is its own separate CelesTrak group, CelesTrak bundles
+# every weather/environmental satellite into this ONE official group — so the
+# group membership itself is authoritative (not guessed), but the family
+# labels used for the category breakdown (GOES, Meteosat, Fengyun, etc.) are
+# derived by matching each object's name against well-known mission-name
+# patterns within that single group. That's a narrower, more honest thing
+# than the Portal 04 pattern: it can mislabel an object's family, but it can
+# never smuggle a non-weather satellite in, because the upstream group
+# membership was never touched.
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
 
 import httpx
@@ -32,47 +31,32 @@ from app.services.orbital import (
 
 router = APIRouter()
 
+WEATHER_GROUP = "weather"
+METEO_SOURCE = "CelesTrak GP catalog (GROUP=weather)"
 
-@router.get("/iss-now")
-async def iss_now():
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.get("http://api.open-notify.org/iss-now.json")
-            r.raise_for_status()
-            data = r.json()
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"Could not reach Open Notify: {exc}") from exc
-    return {**data, "source": "Open Notify"}
-
-
-@router.get("/people-in-space")
-async def people_in_space():
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.get("http://api.open-notify.org/astros.json")
-            r.raise_for_status()
-            data = r.json()
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"Could not reach Open Notify: {exc}") from exc
-    return {**data, "source": "Open Notify"}
-
-
-# --- Satellite tracking (CelesTrak GROUP=stations) --------------------------
-STATIONS_GROUP = "stations"
-HSF_SOURCE = "CelesTrak GP catalog (GROUP=stations)"
-
+# --- Family classification (within the single weather group) ----------------
+# Checked in order; first match wins. Patterns are literal mission-name
+# substrings, not a guess at satellite purpose.
 FAMILY_PATTERNS: list[tuple[str, list[str]]] = [
-    ("ISS", ["ISS (ZARYA)", "ISS"]),
-    ("Tiangong / CSS", ["CSS", "TIANGONG", "TIANHE", "WENTIAN", "MENGTIAN"]),
-    ("Crew & Cargo Vehicle", ["SHENZHOU", "TIANZHOU", "SOYUZ", "PROGRESS MS", "CREW DRAGON", "CARGO DRAGON", "DRAGON", "CYGNUS", "HTV"]),
+    ("GOES", ["GOES", "EWS-G"]),
+    ("Meteosat / MTG", ["METEOSAT", "MTG-"]),
+    ("Metop", ["METOP"]),
+    ("NOAA POES / JPSS", ["NOAA ", "SUOMI NPP"]),
+    ("Fengyun", ["FENGYUN"]),
+    ("DMSP", ["DMSP"]),
+    ("Roscosmos (Meteor/Elektro/Arktika)", ["METEOR-M", "ELEKTRO-L", "ARKTIKA-M"]),
 ]
 CATEGORY_ORDER = [c for c, _ in FAMILY_PATTERNS] + ["Other"]
 
 CATEGORY_META = {
-    "ISS": {"full_name": "International Space Station", "operator": "NASA / Roscosmos / ESA / JAXA / CSA"},
-    "Tiangong / CSS": {"full_name": "Tiangong (China Space Station)", "operator": "China Manned Space Agency (CMSA)"},
-    "Crew & Cargo Vehicle": {"full_name": "Docked or in-transit crew/cargo spacecraft", "operator": "Various (Roscosmos, SpaceX, CMSA, JAXA)"},
-    "Other": {"full_name": "Other tracked human-spaceflight-related object", "operator": "Unknown"},
+    "GOES": {"full_name": "GOES", "operator": "NOAA / NASA"},
+    "Meteosat / MTG": {"full_name": "Meteosat / Meteosat Third Generation", "operator": "EUMETSAT"},
+    "Metop": {"full_name": "Metop", "operator": "EUMETSAT"},
+    "NOAA POES / JPSS": {"full_name": "NOAA POES / JPSS", "operator": "NOAA / NASA"},
+    "Fengyun": {"full_name": "Fengyun", "operator": "China Meteorological Administration (CMA)"},
+    "DMSP": {"full_name": "Defense Meteorological Satellite Program", "operator": "U.S. Space Force"},
+    "Roscosmos (Meteor/Elektro/Arktika)": {"full_name": "Meteor-M / Elektro-L / Arktika-M", "operator": "Roscosmos"},
+    "Other": {"full_name": "Other weather & environmental satellites", "operator": "Various (JMA, ISRO, KMA, ESA/EUMETSAT, NASA, commercial)"},
 }
 
 
@@ -91,18 +75,18 @@ def _norad_from_tle(rec: dict) -> int | None:
         return None
 
 
-async def _fetch_stations_json() -> list[dict]:
+async def _fetch_weather_json() -> list[dict]:
     try:
-        return await fetch_group_json(STATIONS_GROUP)
+        return await fetch_group_json(WEATHER_GROUP)
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak: {exc}") from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
-async def _fetch_stations_tle() -> list[dict]:
+async def _fetch_weather_tle() -> list[dict]:
     try:
-        return await fetch_group_tle(STATIONS_GROUP)
+        return await fetch_group_tle(WEATHER_GROUP)
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak: {exc}") from exc
     except RuntimeError as exc:
@@ -139,9 +123,10 @@ def _shape_satellite(item: dict) -> dict:
     }
 
 
+# --- /overview ---------------------------------------------------------------
 @router.get("/overview")
 async def overview():
-    items = await _fetch_stations_json()
+    items = await _fetch_weather_json()
     shaped = [_shape_satellite(item) for item in items]
 
     by_category: dict[str, int] = {}
@@ -158,17 +143,18 @@ async def overview():
         "categories": active_categories,
         "by_category": by_category,
         "by_regime": by_regime,
-        "source": HSF_SOURCE,
+        "source": METEO_SOURCE,
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "notes": {
-            "categories": "Group membership (stations) is CelesTrak's own official grouping. Family labels (ISS, Tiangong / CSS, Crew & Cargo Vehicle) within that group are derived from name-pattern matching, not upstream metadata.",
+            "categories": "Group membership (weather) is CelesTrak's own official grouping. Family labels (GOES, Meteosat, Fengyun, etc.) within that group are derived from name-pattern matching, not upstream metadata.",
         },
     }
 
 
+# --- /categories (richer payload, kept alongside /overview) -----------------
 @router.get("/categories")
 async def categories():
-    items = await _fetch_stations_json()
+    items = await _fetch_weather_json()
     shaped = [_shape_satellite(item) for item in items]
 
     groups: dict[str, dict] = {}
@@ -188,18 +174,19 @@ async def categories():
     return {
         "total": len(shaped),
         "categories": ordered,
-        "source": HSF_SOURCE,
+        "source": METEO_SOURCE,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
+# --- /satellites (search / listing) ------------------------------------------
 @router.get("/satellites")
 async def satellites(
-    category: str | None = Query(None, description="Filter by category, e.g. ISS, Tiangong / CSS, Crew & Cargo Vehicle"),
+    category: str | None = Query(None, description="Filter by category, e.g. GOES, Meteosat / MTG, Fengyun"),
     q: str | None = Query(None, min_length=1, max_length=80, description="Free-text search over satellite name"),
     limit: int = Query(500, le=2000),
 ):
-    items = await _fetch_stations_json()
+    items = await _fetch_weather_json()
     shaped = [_shape_satellite(item) for item in items]
 
     if category:
@@ -211,19 +198,20 @@ async def satellites(
     return {
         "count": len(shaped),
         "satellites": shaped[:limit],
-        "source": HSF_SOURCE,
+        "source": METEO_SOURCE,
     }
 
 
-_globe_cache = TTLCache(maxsize=2, ttl=300)
+# --- Live 3D globe: SGP4-propagated positions --------------------------------
+_globe_cache = TTLCache(maxsize=2, ttl=300)  # 5 min — matches Portals 03/04's cadence
 
 
-async def _propagated_hsf_objects() -> dict:
-    cache_key = "hsf_globe"
+async def _propagated_meteo_objects() -> dict:
+    cache_key = "meteo_globe"
     if cache_key in _globe_cache:
         return _globe_cache[cache_key]
 
-    tle_records = await _fetch_stations_tle()
+    tle_records = await _fetch_weather_tle()
     category_by_norad = {n: classify_family(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
 
     positions = propagate_subpoints(tle_records)
@@ -262,7 +250,7 @@ async def _propagated_hsf_objects() -> dict:
 
     result = {
         "computed_at": datetime.now(timezone.utc).isoformat(),
-        "source": HSF_SOURCE + ", SGP4-propagated (Skyfield) at request time",
+        "source": METEO_SOURCE + ", SGP4-propagated (Skyfield) at request time",
         "count": len(objects),
         "objects": objects,
     }
@@ -273,7 +261,7 @@ async def _propagated_hsf_objects() -> dict:
 @router.get("/globe-objects")
 async def globe_objects():
     try:
-        return await _propagated_hsf_objects()
+        return await _propagated_meteo_objects()
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak: {exc}") from exc
     except RuntimeError as exc:
@@ -299,8 +287,7 @@ async def orbit_path(norad_id: int):
     return {
         "norad_id": norad_id,
         "name": tle["name"],
-        "category": classify_family(tle["name"]),
-        "source": "CelesTrak stations group, SGP4-propagated",
+        "source": "CelesTrak, SGP4-propagated",
         "path": path,
     }
 
@@ -310,12 +297,13 @@ _orbit_paths_cache = TTLCache(maxsize=2, ttl=300)
 
 @router.get("/orbit-paths")
 async def orbit_paths():
-    cache_key = "hsf_orbit_paths"
+    cache_key = "meteo_orbit_paths"
     if cache_key in _orbit_paths_cache:
         return _orbit_paths_cache[cache_key]
 
-    tle_records = await _fetch_stations_tle()
+    tle_records = await _fetch_weather_tle()
     category_by_norad = {n: classify_family(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
+
     by_norad_tle = {}
     for rec in tle_records:
         norad_id = _norad_from_tle(rec)
@@ -338,7 +326,7 @@ async def orbit_paths():
 
     result = {
         "computed_at": datetime.now(timezone.utc).isoformat(),
-        "source": HSF_SOURCE + ", SGP4-propagated (Skyfield) — one full orbital period per satellite",
+        "source": METEO_SOURCE + ", SGP4-propagated (Skyfield) — one full orbital period per satellite",
         "count": len(objects),
         "objects": objects,
     }
@@ -352,7 +340,7 @@ async def availability(
     lon: float = Query(..., ge=-180, le=180),
     min_elevation_deg: float = Query(10, ge=0, le=90),
 ):
-    tle_records = await _fetch_stations_tle()
+    tle_records = await _fetch_weather_tle()
     category_by_norad = {n: classify_family(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
 
     visible = compute_visible(tle_records, lat, lon, min_elevation_deg=min_elevation_deg, limit=500)
@@ -368,7 +356,7 @@ async def availability(
         "catalog_size": len(tle_records),
         "by_category": by_category,
         "satellites": visible,
-        "source": HSF_SOURCE + " + Skyfield SGP4, computed at request time",
+        "source": METEO_SOURCE + " + Skyfield SGP4, computed at request time",
     }
 
 
@@ -394,10 +382,9 @@ async def sky_track(
     return {
         "norad_id": norad_id,
         "name": tle["name"],
-        "category": classify_family(tle["name"]),
         "window_min": window_min,
         "track": track,
-        "source": "CelesTrak stations group + Skyfield SGP4, computed at request time",
+        "source": "CelesTrak + Skyfield SGP4, computed at request time",
     }
 
 
@@ -409,7 +396,7 @@ async def sky_tracks(
     elevation_m: float = Query(0),
     window_min: int = Query(25, ge=5, le=90),
 ):
-    tle_records = await _fetch_stations_tle()
+    tle_records = await _fetch_weather_tle()
     category_by_norad = {n: classify_family(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
 
     visible = compute_visible(tle_records, lat, lon, min_elevation_deg=min_elevation_deg, limit=500)
@@ -425,39 +412,68 @@ async def sky_tracks(
             str(norad_id): {"category": category_by_norad.get(norad_id, "Other"), "points": points}
             for norad_id, points in tracks.items()
         },
-        "source": HSF_SOURCE + " + Skyfield SGP4, computed at request time",
+        "source": METEO_SOURCE + " + Skyfield SGP4, computed at request time",
     }
 
 
 # --- Static reference data: published specifications, NOT live telemetry ----
 SERVICE_INFO = [
     {
-        "category": "ISS", "full_name": "International Space Station",
-        "operator": "NASA / Roscosmos / ESA / JAXA / CSA (5-agency partnership)", "status": "Continuously crewed since November 2000",
-        "orbital_regime": "LEO", "altitude_km": 420, "fleet_size_note": "One station, modular, expanded over 20+ years",
-        "services": ["Long-duration human spaceflight research", "Microgravity science", "International crew rotation & commercial resupply"],
-        "source": "NASA", "source_url": "https://www.nasa.gov/international-space-station/",
+        "category": "GOES", "full_name": "GOES (Geostationary Operational Environmental Satellite)",
+        "operator": "NOAA / NASA", "status": "Operational (GOES-16 East, GOES-18 West; GOES-19 phasing in)",
+        "orbital_regime": "GEO", "altitude_km": 35786, "fleet_size_note": "2 primary operational + 1-2 on-orbit spares",
+        "services": ["Real-time storm/hurricane imagery (ABI)", "Lightning mapping (GLM)", "Space weather monitoring"],
+        "source": "NOAA NESDIS", "source_url": "https://www.goes.noaa.gov/",
     },
     {
-        "category": "Tiangong / CSS", "full_name": "Tiangong (China Space Station)",
-        "operator": "China Manned Space Agency (CMSA)", "status": "Continuously crewed since 2022; 3-module core complete",
-        "orbital_regime": "LEO", "altitude_km": 390, "fleet_size_note": "Tianhe (core), Wentian and Mengtian modules; expansion to 6 modules planned",
-        "services": ["Chinese crewed spaceflight research", "Microgravity & life-science experiments", "International astronaut training partnerships"],
-        "source": "China Manned Space Agency", "source_url": "http://www.cmse.gov.cn/",
+        "category": "Meteosat / MTG", "full_name": "Meteosat / Meteosat Third Generation",
+        "operator": "EUMETSAT", "status": "Operational (MSG series + first MTG-I satellite)",
+        "orbital_regime": "GEO", "altitude_km": 35786, "fleet_size_note": "Multiple in-orbit satellites covering Europe, Africa and the Indian Ocean",
+        "services": ["Full-disk imagery for Europe/Africa", "Severe weather nowcasting", "Lightning imaging (MTG)"],
+        "source": "EUMETSAT", "source_url": "https://www.eumetsat.int/",
     },
     {
-        "category": "Crew & Cargo Vehicle", "full_name": "Docked or in-transit crew/cargo spacecraft",
-        "operator": "Various (Roscosmos Soyuz/Progress, SpaceX Crew/Cargo Dragon, CMSA Shenzhou/Tianzhou, JAXA HTV)", "status": "Varies — active only while in transit or docked",
-        "orbital_regime": "LEO", "altitude_km": 400, "fleet_size_note": "Whichever crew or resupply vehicles CelesTrak is currently tracking with their own catalog entry",
-        "services": ["Crew transport to/from station", "Pressurized & unpressurized cargo resupply", "Trash disposal / deorbit (cargo variants)"],
-        "source": "NASA / Roscosmos / CMSA / SpaceX", "source_url": "https://www.nasa.gov/humans-in-space/",
+        "category": "Metop", "full_name": "Metop",
+        "operator": "EUMETSAT", "status": "Operational polar-orbiting fleet",
+        "orbital_regime": "LEO (sun-synchronous)", "altitude_km": 817, "fleet_size_note": "Metop-B and Metop-C operational; part of the joint EUMETSAT/NOAA polar system",
+        "services": ["Global atmospheric sounding", "Ocean surface wind (scatterometer)", "Numerical weather prediction input"],
+        "source": "EUMETSAT", "source_url": "https://www.eumetsat.int/metop",
+    },
+    {
+        "category": "NOAA POES / JPSS", "full_name": "NOAA POES / Joint Polar Satellite System",
+        "operator": "NOAA / NASA", "status": "Operational (Suomi NPP, NOAA-20, NOAA-21)",
+        "orbital_regime": "LEO (sun-synchronous)", "altitude_km": 824, "fleet_size_note": "Multiple polar-orbiting satellites in complementary orbits",
+        "services": ["Global imagery & sounding (VIIRS, CrIS, ATMS)", "Climate data records", "Search-and-rescue relay (SARSAT)"],
+        "source": "NOAA NESDIS", "source_url": "https://www.nesdis.noaa.gov/jpss",
+    },
+    {
+        "category": "Fengyun", "full_name": "Fengyun",
+        "operator": "China Meteorological Administration (CMA)", "status": "Operational (FY-2/FY-4 geostationary, FY-3 polar)",
+        "orbital_regime": "GEO + LEO", "altitude_km": 35786, "fleet_size_note": "Mixed geostationary and polar-orbiting fleet",
+        "services": ["Regional weather imagery (East Asia/Pacific)", "Polar atmospheric sounding", "Space & environmental monitoring"],
+        "source": "China Meteorological Administration", "source_url": "https://www.cma.gov.cn/",
+    },
+    {
+        "category": "DMSP", "full_name": "Defense Meteorological Satellite Program",
+        "operator": "U.S. Space Force", "status": "Legacy — remaining satellites well past design life",
+        "orbital_regime": "LEO (sun-synchronous)", "altitude_km": 830, "fleet_size_note": "A handful of aging satellites (F16-F18) still catalogued and occasionally used",
+        "services": ["Cloud imagery", "Special sensor microwave sounding", "Auroral/space-environment monitoring"],
+        "source": "U.S. Space Force / NOAA (data archive)", "source_url": "https://www.ospo.noaa.gov/Operations/DMSP/",
+    },
+    {
+        "category": "Roscosmos (Meteor/Elektro/Arktika)", "full_name": "Meteor-M / Elektro-L / Arktika-M",
+        "operator": "Roscosmos", "status": "Operational",
+        "orbital_regime": "LEO + GEO + HEO (Molniya-type for Arktika-M)", "altitude_km": 35786, "fleet_size_note": "Meteor-M (polar), Elektro-L (GEO), Arktika-M (highly elliptical, Arctic coverage)",
+        "services": ["Polar & geostationary weather imagery", "Arctic-region monitoring (Arktika-M's specialty)", "Space environment monitoring"],
+        "source": "Roshydromet / Roscosmos", "source_url": "https://planet.rssi.ru/",
     },
 ]
 
-HSF_OTHER_NOTE = (
-    "The 'Other' category would hold any additional object CelesTrak files under its stations group "
-    "that doesn't match ISS, Tiangong/CSS, or a known crew/cargo vehicle name pattern — for example a "
-    "newly launched vehicle type not yet added to the pattern list above."
+METEO_OTHER_NOTE = (
+    "The 'Other' category groups additional weather & environmental missions inside CelesTrak's weather "
+    "group that don't match one of the named families above — regional geostationary satellites "
+    "(INSAT, Himawari, COMS, GEO-KOMPSAT), ocean/atmosphere research missions (Sentinel-3), and "
+    "commercial GNSS radio-occultation constellations (CYGNSS, Tianmu-1) that CelesTrak also files under weather."
 )
 
 
@@ -466,6 +482,6 @@ def service_info():
     return {
         "categories": SERVICE_INFO,
         "is_static_reference_data": True,
-        "excluded_note": HSF_OTHER_NOTE,
-        "note": "Published mission facts from each agency's own site — not live telemetry. Live satellite counts and positions come from /overview, /categories and /globe-objects instead.",
+        "excluded_note": METEO_OTHER_NOTE,
+        "note": "Published fleet/service facts from each operator's own site — not live telemetry. Live satellite counts and positions come from /overview, /categories and /globe-objects instead.",
     }

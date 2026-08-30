@@ -1,16 +1,16 @@
-# Portal 07 — Human Spaceflight.
-# Two independent free sources feed this portal:
-#   - Open Notify (ISS position right now + who's currently in space) — kept
-#     exactly as before.
-#   - CelesTrak GP catalog, GROUP=stations — the crewed space stations
-#     themselves (ISS, Tiangong/CSS modules) plus any visiting crew/cargo
-#     vehicle CelesTrak currently tracks under that same group. Like Portal 05
-#     (Meteorological), CelesTrak bundles this into ONE official group, so
-#     group membership itself is authoritative; the family labels (ISS,
-#     Tiangong / CSS, Crew & Cargo Vehicle) are derived by matching each
-#     object's public name — they can mislabel an object's family, but they
-#     can never smuggle a non-station satellite in, since the upstream group
-#     membership is never touched.
+# Portal 06 add-on — Space Science satellite tracking.
+# Source: CelesTrak GP catalog, GROUP=science ("Space & Earth Science") — the
+# same live-data + SGP4-propagation pattern as Portal 03 (Navigation). This
+# sits alongside the existing /api/space-science/* (JPL Horizons deep-space
+# ephemerides) endpoints in space_science.py without touching them; this
+# router only covers Earth-orbiting science satellites that CelesTrak
+# actually tracks with TLEs, which deep-space probes are not.
+#
+# CelesTrak's science group is a flat list with no official sub-categories,
+# so satellites are grouped into broad, disclosed-as-best-effort mission
+# families from their public names (a well-known technique for a handful of
+# flagship missions; everything else falls into "Other / Unclassified"
+# rather than being force-fit into a family it may not belong to).
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -32,56 +32,45 @@ from app.services.orbital import (
 
 router = APIRouter()
 
+SCI_GROUP = "science"
+SCI_SOURCE = "CelesTrak GP catalog (GROUP=science)"
 
-@router.get("/iss-now")
-async def iss_now():
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.get("http://api.open-notify.org/iss-now.json")
-            r.raise_for_status()
-            data = r.json()
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"Could not reach Open Notify: {exc}") from exc
-    return {**data, "source": "Open Notify"}
-
-
-@router.get("/people-in-space")
-async def people_in_space():
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.get("http://api.open-notify.org/astros.json")
-            r.raise_for_status()
-            data = r.json()
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"Could not reach Open Notify: {exc}") from exc
-    return {**data, "source": "Open Notify"}
-
-
-# --- Satellite tracking (CelesTrak GROUP=stations) --------------------------
-STATIONS_GROUP = "stations"
-HSF_SOURCE = "CelesTrak GP catalog (GROUP=stations)"
-
-FAMILY_PATTERNS: list[tuple[str, list[str]]] = [
-    ("ISS", ["ISS (ZARYA)", "ISS"]),
-    ("Tiangong / CSS", ["CSS", "TIANGONG", "TIANHE", "WENTIAN", "MENGTIAN"]),
-    ("Crew & Cargo Vehicle", ["SHENZHOU", "TIANZHOU", "SOYUZ", "PROGRESS MS", "CREW DRAGON", "CARGO DRAGON", "DRAGON", "CYGNUS", "HTV"]),
+CATEGORY_ORDER = [
+    "Astrophysics & Astronomy",
+    "Heliophysics & Space Weather",
+    "Earth & Climate Science",
+    "Technology Demonstration",
+    "Other / Unclassified",
 ]
-CATEGORY_ORDER = [c for c, _ in FAMILY_PATTERNS] + ["Other"]
 
 CATEGORY_META = {
-    "ISS": {"full_name": "International Space Station", "operator": "NASA / Roscosmos / ESA / JAXA / CSA"},
-    "Tiangong / CSS": {"full_name": "Tiangong (China Space Station)", "operator": "China Manned Space Agency (CMSA)"},
-    "Crew & Cargo Vehicle": {"full_name": "Docked or in-transit crew/cargo spacecraft", "operator": "Various (Roscosmos, SpaceX, CMSA, JAXA)"},
-    "Other": {"full_name": "Other tracked human-spaceflight-related object", "operator": "Unknown"},
+    "Astrophysics & Astronomy": {"full_name": "Astrophysics & Astronomy", "focus": "Telescopes and observatories studying stars, galaxies, and the wider universe."},
+    "Heliophysics & Space Weather": {"full_name": "Heliophysics & Space Weather", "focus": "Missions studying the Sun, the solar wind, and near-Earth space weather."},
+    "Earth & Climate Science": {"full_name": "Earth & Climate Science", "focus": "Missions studying Earth's ice, oceans, atmosphere and climate from orbit."},
+    "Technology Demonstration": {"full_name": "Technology Demonstration", "focus": "Small satellites and CubeSats testing new science instruments or spacecraft technology."},
+    "Other / Unclassified": {"full_name": "Other / Unclassified", "focus": "Catalogued in CelesTrak's science group but not confidently matched to a family above from its name alone."},
 }
 
+# Best-effort name-substring matches for well-known, publicly documented
+# missions. Anything not matched here is left as "Other / Unclassified"
+# rather than guessed.
+_ASTRO_TOKENS = ("HST", "HUBBLE", "IBEX", "GALEX", "SWIFT", "NUSTAR", "TESS", "IXPE", "SPEKTR")
+_HELIO_TOKENS = ("SOHO", "ACE", "WIND", "TIMED", "SORCE", "AIM", "RHESSI", "TRACE", "DSCOVR", "PROBA-2", "GOES")
+_EARTH_TOKENS = ("ICESAT", "CALIPSO", "CLOUDSAT", "GRACE", "JASON", "SWOT", "CYGNSS", "QUIKSCAT", "SMAP", "AURA", "TERRA", "AQUA", "SENTINEL")
+_TECH_TOKENS = ("CUTE", "AAUSAT", "CUBESAT", "CUBE", "SMALLSAT", "DEMO", "TECHNOSAT", "PROBA")
 
-def classify_family(name: str | None) -> str:
-    upper = (name or "").upper()
-    for category, patterns in FAMILY_PATTERNS:
-        if any(p in upper for p in patterns):
-            return category
-    return "Other"
+
+def classify_science_category(name: str) -> str:
+    n = (name or "").upper()
+    if any(tok in n for tok in _ASTRO_TOKENS):
+        return "Astrophysics & Astronomy"
+    if any(tok in n for tok in _HELIO_TOKENS):
+        return "Heliophysics & Space Weather"
+    if any(tok in n for tok in _EARTH_TOKENS):
+        return "Earth & Climate Science"
+    if any(tok in n for tok in _TECH_TOKENS):
+        return "Technology Demonstration"
+    return "Other / Unclassified"
 
 
 def _norad_from_tle(rec: dict) -> int | None:
@@ -91,20 +80,20 @@ def _norad_from_tle(rec: dict) -> int | None:
         return None
 
 
-async def _fetch_stations_json() -> list[dict]:
+async def _safe_fetch_group_json() -> list[dict]:
     try:
-        return await fetch_group_json(STATIONS_GROUP)
+        return await fetch_group_json(SCI_GROUP)
     except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak (GROUP={SCI_GROUP}): {exc}") from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
-async def _fetch_stations_tle() -> list[dict]:
+async def _safe_fetch_group_tle() -> list[dict]:
     try:
-        return await fetch_group_tle(STATIONS_GROUP)
+        return await fetch_group_tle(SCI_GROUP)
     except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak (GROUP={SCI_GROUP}): {exc}") from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -123,7 +112,7 @@ def _shape_satellite(item: dict) -> dict:
         "name": name,
         "norad_id": item.get("NORAD_CAT_ID"),
         "cospar_id": item.get("OBJECT_ID"),
-        "category": classify_family(name),
+        "category": classify_science_category(name),
         "regime": classify_regime(mean_motion),
         "inclination_deg": inclination,
         "period_min": round(1440 / mean_motion, 1) if mean_motion else None,
@@ -141,8 +130,8 @@ def _shape_satellite(item: dict) -> dict:
 
 @router.get("/overview")
 async def overview():
-    items = await _fetch_stations_json()
-    shaped = [_shape_satellite(item) for item in items]
+    data = await _safe_fetch_group_json()
+    shaped = [_shape_satellite(item) for item in data]
 
     by_category: dict[str, int] = {}
     by_regime: dict[str, int] = {}
@@ -158,25 +147,25 @@ async def overview():
         "categories": active_categories,
         "by_category": by_category,
         "by_regime": by_regime,
-        "source": HSF_SOURCE,
+        "source": SCI_SOURCE,
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "notes": {
-            "categories": "Group membership (stations) is CelesTrak's own official grouping. Family labels (ISS, Tiangong / CSS, Crew & Cargo Vehicle) within that group are derived from name-pattern matching, not upstream metadata.",
+            "categories": "Best-effort mission-family grouping from public satellite names; CelesTrak's science group has no official sub-categories of its own.",
         },
     }
 
 
 @router.get("/categories")
 async def categories():
-    items = await _fetch_stations_json()
-    shaped = [_shape_satellite(item) for item in items]
+    data = await _safe_fetch_group_json()
+    shaped = [_shape_satellite(item) for item in data]
 
     groups: dict[str, dict] = {}
     for sat in shaped:
         key = sat["category"]
         entry = groups.setdefault(key, {
             "category": key,
-            **CATEGORY_META.get(key, {"full_name": key, "operator": "Unknown"}),
+            **CATEGORY_META.get(key, {"full_name": key, "focus": ""}),
             "satellite_count": 0,
             "by_regime": {},
         })
@@ -188,19 +177,19 @@ async def categories():
     return {
         "total": len(shaped),
         "categories": ordered,
-        "source": HSF_SOURCE,
+        "source": SCI_SOURCE,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
 @router.get("/satellites")
 async def satellites(
-    category: str | None = Query(None, description="Filter by category, e.g. ISS, Tiangong / CSS, Crew & Cargo Vehicle"),
+    category: str | None = Query(None, description="Filter by category, e.g. 'Earth & Climate Science'"),
     q: str | None = Query(None, min_length=1, max_length=80, description="Free-text search over satellite name"),
     limit: int = Query(500, le=2000),
 ):
-    items = await _fetch_stations_json()
-    shaped = [_shape_satellite(item) for item in items]
+    data = await _safe_fetch_group_json()
+    shaped = [_shape_satellite(item) for item in data]
 
     if category:
         shaped = [s for s in shaped if s["category"].lower() == category.lower()]
@@ -211,21 +200,19 @@ async def satellites(
     return {
         "count": len(shaped),
         "satellites": shaped[:limit],
-        "source": HSF_SOURCE,
+        "source": SCI_SOURCE,
     }
 
 
 _globe_cache = TTLCache(maxsize=2, ttl=300)
 
 
-async def _propagated_hsf_objects() -> dict:
-    cache_key = "hsf_globe"
+async def _propagated_sci_objects() -> dict:
+    cache_key = "sci_globe"
     if cache_key in _globe_cache:
         return _globe_cache[cache_key]
 
-    tle_records = await _fetch_stations_tle()
-    category_by_norad = {n: classify_family(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
-
+    tle_records = await _safe_fetch_group_tle()
     positions = propagate_subpoints(tle_records)
 
     by_norad_tle = {}
@@ -242,7 +229,7 @@ async def _propagated_hsf_objects() -> dict:
         objects.append({
             "norad_id": norad_id,
             "name": rec["name"],
-            "category": category_by_norad.get(norad_id, "Other"),
+            "category": classify_science_category(rec["name"]),
             "regime": classify_regime(pos.get("mean_motion")),
             "lat": pos["lat"],
             "lon": pos["lon"],
@@ -262,7 +249,7 @@ async def _propagated_hsf_objects() -> dict:
 
     result = {
         "computed_at": datetime.now(timezone.utc).isoformat(),
-        "source": HSF_SOURCE + ", SGP4-propagated (Skyfield) at request time",
+        "source": SCI_SOURCE + ", SGP4-propagated (Skyfield) at request time",
         "count": len(objects),
         "objects": objects,
     }
@@ -273,7 +260,7 @@ async def _propagated_hsf_objects() -> dict:
 @router.get("/globe-objects")
 async def globe_objects():
     try:
-        return await _propagated_hsf_objects()
+        return await _propagated_sci_objects()
     except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak: {exc}") from exc
     except RuntimeError as exc:
@@ -299,8 +286,8 @@ async def orbit_path(norad_id: int):
     return {
         "norad_id": norad_id,
         "name": tle["name"],
-        "category": classify_family(tle["name"]),
-        "source": "CelesTrak stations group, SGP4-propagated",
+        "category": classify_science_category(tle["name"]),
+        "source": "CelesTrak science group, SGP4-propagated",
         "path": path,
     }
 
@@ -310,12 +297,11 @@ _orbit_paths_cache = TTLCache(maxsize=2, ttl=300)
 
 @router.get("/orbit-paths")
 async def orbit_paths():
-    cache_key = "hsf_orbit_paths"
+    cache_key = "sci_orbit_paths"
     if cache_key in _orbit_paths_cache:
         return _orbit_paths_cache[cache_key]
 
-    tle_records = await _fetch_stations_tle()
-    category_by_norad = {n: classify_family(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
+    tle_records = await _safe_fetch_group_tle()
     by_norad_tle = {}
     for rec in tle_records:
         norad_id = _norad_from_tle(rec)
@@ -331,14 +317,14 @@ async def orbit_paths():
         objects.append({
             "norad_id": norad_id,
             "name": rec["name"],
-            "category": category_by_norad.get(norad_id, "Other"),
+            "category": classify_science_category(rec["name"]),
             "period_min": entry["period_min"],
             "path": entry["path"],
         })
 
     result = {
         "computed_at": datetime.now(timezone.utc).isoformat(),
-        "source": HSF_SOURCE + ", SGP4-propagated (Skyfield) — one full orbital period per satellite",
+        "source": SCI_SOURCE + ", SGP4-propagated (Skyfield) — one full orbital period per satellite",
         "count": len(objects),
         "objects": objects,
     }
@@ -352,13 +338,12 @@ async def availability(
     lon: float = Query(..., ge=-180, le=180),
     min_elevation_deg: float = Query(10, ge=0, le=90),
 ):
-    tle_records = await _fetch_stations_tle()
-    category_by_norad = {n: classify_family(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
+    tle_records = await _safe_fetch_group_tle()
 
     visible = compute_visible(tle_records, lat, lon, min_elevation_deg=min_elevation_deg, limit=500)
     by_category: dict[str, int] = {}
     for sat in visible:
-        sat["category"] = category_by_norad.get(sat["norad_id"], "Other")
+        sat["category"] = classify_science_category(sat["name"])
         by_category[sat["category"]] = by_category.get(sat["category"], 0) + 1
 
     return {
@@ -368,7 +353,7 @@ async def availability(
         "catalog_size": len(tle_records),
         "by_category": by_category,
         "satellites": visible,
-        "source": HSF_SOURCE + " + Skyfield SGP4, computed at request time",
+        "source": SCI_SOURCE + " + Skyfield SGP4, computed at request time",
     }
 
 
@@ -394,10 +379,10 @@ async def sky_track(
     return {
         "norad_id": norad_id,
         "name": tle["name"],
-        "category": classify_family(tle["name"]),
+        "category": classify_science_category(tle["name"]),
         "window_min": window_min,
         "track": track,
-        "source": "CelesTrak stations group + Skyfield SGP4, computed at request time",
+        "source": "CelesTrak science group + Skyfield SGP4, computed at request time",
     }
 
 
@@ -409,11 +394,11 @@ async def sky_tracks(
     elevation_m: float = Query(0),
     window_min: int = Query(25, ge=5, le=90),
 ):
-    tle_records = await _fetch_stations_tle()
-    category_by_norad = {n: classify_family(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
+    tle_records = await _safe_fetch_group_tle()
 
     visible = compute_visible(tle_records, lat, lon, min_elevation_deg=min_elevation_deg, limit=500)
     visible_norad_ids = {sat["norad_id"] for sat in visible}
+    name_by_norad = {sat["norad_id"]: sat["name"] for sat in visible}
 
     visible_tle_records = [rec for rec in tle_records if _norad_from_tle(rec) in visible_norad_ids]
 
@@ -422,43 +407,46 @@ async def sky_tracks(
         "location": {"lat": lat, "lon": lon},
         "window_min": window_min,
         "tracks": {
-            str(norad_id): {"category": category_by_norad.get(norad_id, "Other"), "points": points}
+            str(norad_id): {"category": classify_science_category(name_by_norad.get(norad_id, "")), "points": points}
             for norad_id, points in tracks.items()
         },
-        "source": HSF_SOURCE + " + Skyfield SGP4, computed at request time",
+        "source": SCI_SOURCE + " + Skyfield SGP4, computed at request time",
     }
 
 
-# --- Static reference data: published specifications, NOT live telemetry ----
+# --- Static reference data: general mission-family context, NOT telemetry --
 SERVICE_INFO = [
     {
-        "category": "ISS", "full_name": "International Space Station",
-        "operator": "NASA / Roscosmos / ESA / JAXA / CSA (5-agency partnership)", "status": "Continuously crewed since November 2000",
-        "orbital_regime": "LEO", "altitude_km": 420, "fleet_size_note": "One station, modular, expanded over 20+ years",
-        "services": ["Long-duration human spaceflight research", "Microgravity science", "International crew rotation & commercial resupply"],
-        "source": "NASA", "source_url": "https://www.nasa.gov/international-space-station/",
+        "category": "Astrophysics & Astronomy", "full_name": "Astrophysics & Astronomy",
+        "description": "Space telescopes and observatories that look outward — at stars, galaxies, exoplanets, and high-energy phenomena — from above the distorting effect of Earth's atmosphere.",
+        "example_missions": ["Hubble Space Telescope", "Swift Observatory", "NuSTAR", "TESS"],
+        "source": "NASA Science", "source_url": "https://science.nasa.gov/astrophysics/",
     },
     {
-        "category": "Tiangong / CSS", "full_name": "Tiangong (China Space Station)",
-        "operator": "China Manned Space Agency (CMSA)", "status": "Continuously crewed since 2022; 3-module core complete",
-        "orbital_regime": "LEO", "altitude_km": 390, "fleet_size_note": "Tianhe (core), Wentian and Mengtian modules; expansion to 6 modules planned",
-        "services": ["Chinese crewed spaceflight research", "Microgravity & life-science experiments", "International astronaut training partnerships"],
-        "source": "China Manned Space Agency", "source_url": "http://www.cmse.gov.cn/",
+        "category": "Heliophysics & Space Weather", "full_name": "Heliophysics & Space Weather",
+        "description": "Missions studying the Sun, the solar wind, and how solar activity drives space weather that affects satellites, power grids, and astronauts.",
+        "example_missions": ["SOHO", "ACE", "DSCOVR", "TIMED"],
+        "source": "NASA Heliophysics", "source_url": "https://science.nasa.gov/heliophysics/",
     },
     {
-        "category": "Crew & Cargo Vehicle", "full_name": "Docked or in-transit crew/cargo spacecraft",
-        "operator": "Various (Roscosmos Soyuz/Progress, SpaceX Crew/Cargo Dragon, CMSA Shenzhou/Tianzhou, JAXA HTV)", "status": "Varies — active only while in transit or docked",
-        "orbital_regime": "LEO", "altitude_km": 400, "fleet_size_note": "Whichever crew or resupply vehicles CelesTrak is currently tracking with their own catalog entry",
-        "services": ["Crew transport to/from station", "Pressurized & unpressurized cargo resupply", "Trash disposal / deorbit (cargo variants)"],
-        "source": "NASA / Roscosmos / CMSA / SpaceX", "source_url": "https://www.nasa.gov/humans-in-space/",
+        "category": "Earth & Climate Science", "full_name": "Earth & Climate Science",
+        "description": "Satellites measuring ice sheets, sea level, clouds, and the broader climate system — distinct from Portal 02's operational hazard-monitoring satellites.",
+        "example_missions": ["ICESat-2", "GRACE-FO", "CALIPSO", "SWOT"],
+        "source": "NASA Earth Science", "source_url": "https://science.nasa.gov/earth-science/",
+    },
+    {
+        "category": "Technology Demonstration", "full_name": "Technology Demonstration",
+        "description": "Small satellites and university/agency CubeSats flight-testing new instruments, propulsion, or spacecraft techniques ahead of larger missions.",
+        "example_missions": ["CUTE", "AAUSAT series", "various PROBA missions"],
+        "source": "NASA Small Spacecraft Technology", "source_url": "https://www.nasa.gov/mission/small-spacecraft-technology-program/",
+    },
+    {
+        "category": "Other / Unclassified", "full_name": "Other / Unclassified",
+        "description": "Catalogued by CelesTrak under Space & Earth Science but not confidently matched to a family above from its public name alone.",
+        "example_missions": [],
+        "source": "CelesTrak", "source_url": "https://celestrak.org/",
     },
 ]
-
-HSF_OTHER_NOTE = (
-    "The 'Other' category would hold any additional object CelesTrak files under its stations group "
-    "that doesn't match ISS, Tiangong/CSS, or a known crew/cargo vehicle name pattern — for example a "
-    "newly launched vehicle type not yet added to the pattern list above."
-)
 
 
 @router.get("/service-info")
@@ -466,6 +454,5 @@ def service_info():
     return {
         "categories": SERVICE_INFO,
         "is_static_reference_data": True,
-        "excluded_note": HSF_OTHER_NOTE,
-        "note": "Published mission facts from each agency's own site — not live telemetry. Live satellite counts and positions come from /overview, /categories and /globe-objects instead.",
+        "note": "General mission-family context from public agency pages — not live telemetry. Live satellite counts and positions come from /overview, /categories and /globe-objects instead.",
     }

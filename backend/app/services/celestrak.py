@@ -192,7 +192,13 @@ def _parse_response(params: dict, response: httpx.Response):
 
 
 async def _fetch_and_store(key: tuple, params: dict):
-    response = await _request(params)
+    try:
+        response = await _request(params)
+    except httpx.HTTPError:
+        if key in _stale:
+            logger.warning("CelesTrak request failed for %s — serving stale cache", params)
+            return _stale[key]
+        raise
     if response.status_code == 403:
         if key in _stale:
             logger.warning("CelesTrak 403 for %s — serving in-memory stale cache", params)

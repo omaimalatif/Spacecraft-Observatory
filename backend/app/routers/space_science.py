@@ -59,21 +59,24 @@ async def _spacecraft_with_position(entry: dict) -> dict:
 @router.get("/solar-system")
 async def solar_system():
     """Sun + 8 planets, heliocentric-frame positions computed by JPL Horizons right now."""
-    try:
-        results = await asyncio.gather(*(
-            jpl_horizons.get_state_vector(cmd) for cmd in jpl_horizons.MAJOR_BODIES.values()
-        ))
-    except httpx.HTTPError as exc:
-        _record("horizons", False, str(exc))
-        raise HTTPException(status_code=502, detail=f"Could not reach JPL Horizons: {exc}") from exc
-    except jpl_horizons.HorizonsError as exc:
-        _record("horizons", False, str(exc))
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    results = await asyncio.gather(*(
+        jpl_horizons.get_state_vector(cmd) for cmd in jpl_horizons.MAJOR_BODIES.values()
+    ), return_exceptions=True)
+
+    successful = [result for result in results if not isinstance(result, Exception)]
+    if not successful:
+        failure = next((result for result in results if isinstance(result, Exception)), None)
+        _record("horizons", False, str(failure))
+        if isinstance(failure, (httpx.HTTPError, jpl_horizons.HorizonsError)):
+            detail = f"Could not reach JPL Horizons: {failure}" if isinstance(failure, httpx.HTTPError) else str(failure)
+            raise HTTPException(status_code=502, detail=detail) from failure
+        raise HTTPException(status_code=502, detail="Could not calculate solar-system positions")
 
     _record("horizons", True)
     bodies = [
         {"name": name.capitalize(), "command": cmd, **vector}
         for (name, cmd), vector in zip(jpl_horizons.MAJOR_BODIES.items(), results)
+        if not isinstance(vector, Exception)
     ]
     return {"bodies": bodies, "label": "EPHEMERIS-DERIVED", "source": "NASA/JPL Horizons"}
 

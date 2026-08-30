@@ -1,0 +1,25 @@
+/* Shared, unscoped base styles for the satellite-category legend chips and
+   map legend used by every satellite-tracking portal (Navigation uses the
+   original .constellation-chip / .map-constellation-legend names directly in
+   nav-theme.css; Communication and Space Science satellites use these
+   renamed equivalents since "category" fits non-GNSS satellite groupings
+   better than "constellation"). Structure is identical — actual per-category
+   colors are always applied inline via each category's color map, never
+   hardcoded here. */
+.category-chip {
+  font: 600 10px 'JetBrains Mono'; letter-spacing: .4px; text-transform: uppercase;
+  padding: 5px 10px; border-radius: 999px; border: 1px solid; background: rgba(5,13,18,.7);
+  cursor: pointer; transition: opacity .15s;
+}
+.category-chip.off { opacity: .3; }
+
+.map-category-legend {
+  position: absolute; z-index: 1000; left: 12px; bottom: 12px; display: flex; flex-wrap: wrap;
+  align-items: center; gap: 6px 10px; max-width: calc(100% - 24px); padding: 8px 10px;
+  border: 1px solid rgba(187,222,240,.2); border-radius: 6px; background: rgba(5,13,18,.88);
+  color: #cddce3; font: 10px 'JetBrains Mono'; pointer-events: none;
+}
+.map-category-legend strong { flex-basis: 100%; color: #f7d9ec; font-size: 9px; text-transform: uppercase; letter-spacing: .4px; }
+.map-category-legend span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.map-category-legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.map-category-legend .location-key { background: #e68fbf; box-shadow: 0 0 0 2px rgba(230,143,191,.28); }

@@ -7,7 +7,10 @@ import Footer from './components/Footer.jsx'
 import GlobalAssetsDashboard from './components/GlobalAssetsDashboard.jsx'
 import NavigationDashboard from './components/NavigationDashboard.jsx'
 import EarthObservation from './components/EarthObservation.jsx'
-import SpaceScience from './components/SpaceScience.jsx'
+import SpaceScienceSatellites from './components/SpaceScienceSatellites.jsx'
+import CommunicationDashboard from './components/CommunicationDashboard.jsx'
+import MeteorologicalDashboard from './components/MeteorologicalDashboard.jsx'
+import HumanSpaceflightDashboard from './components/HumanSpaceflightDashboard.jsx'
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash)
@@ -26,7 +29,10 @@ export default function App() {
         {route === '#/global-space-assets' ? <GlobalAssetsDashboard /> :
          route === '#/navigation-systems' ? <NavigationDashboard /> :
          route === '#/earth-observation' ? <EarthObservation /> :
-         route === '#/space-science' ? <SpaceScience /> : <>
+         route === '#/space-science' || route === '#/space-science-satellites' ? <SpaceScienceSatellites /> :
+         route === '#/communication' ? <CommunicationDashboard /> :
+         route === '#/meteorological' ? <MeteorologicalDashboard /> :
+         route === '#/human-spaceflight' ? <HumanSpaceflightDashboard /> : <>
           <Hero />
           <PortalGrid />
           <VisibilityExplorer />

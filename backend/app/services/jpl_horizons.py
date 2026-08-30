@@ -69,15 +69,15 @@ def _parse_vector_block(text: str) -> dict:
     block = text.split("$$SOE", 1)[1].split("$$EOE", 1)[0].strip()
     first_line = block.splitlines()[0]
     fields = [f.strip() for f in first_line.split(",")]
-    # CSV_FORMAT=YES, VEC_TABLE=1 -> JDTDB, Calendar Date, X, Y, Z, VX, VY, VZ, (trailing comma)
-    if len(fields) < 8:
+    # VEC_TABLE=1 returns position only: JDTDB, Calendar Date, X, Y, Z.
+    # Velocity columns are not needed by the solar-system visualisation.
+    if len(fields) < 5:
         raise HorizonsError(f"Unexpected Horizons vector row format: {first_line}")
 
     return {
         "jd_tdb": float(fields[0]),
         "calendar_date": fields[1],
         "x_au": float(fields[2]), "y_au": float(fields[3]), "z_au": float(fields[4]),
-        "vx_au_day": float(fields[5]), "vy_au_day": float(fields[6]), "vz_au_day": float(fields[7]),
     }
 
 
@@ -106,7 +106,7 @@ async def get_state_vector(command_id: str) -> dict:
         "STEP_SIZE": "'1d'",
         "VEC_TABLE": "1",
         "REF_SYSTEM": "'J2000'",
-        "REFERENCE_PLANE": "'ECLIPTIC'",
+        "REF_PLANE": "'ECLIPTIC'",
         "OUT_UNITS": "'AU-D'",
         "CSV_FORMAT": "YES",
     }
