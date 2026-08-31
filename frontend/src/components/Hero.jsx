@@ -1,34 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 const PORTALS = [
   { title: 'Global Space Assets', href: '#/global-space-assets' },
   { title: 'Earth Observation Satellites', href: '#/earth-observation' },
-  { title: 'Navigation Systems', href: '#/navigation-systems' },
-  { title: 'Communication', href: '#portals' },
-  { title: 'Meteorological & Environmental', href: '#portals' },
-  { title: 'Live Space Science Tracking', href: '#/space-science' },
-  { title: 'Human Spaceflight', href: '#portals' },
-  { title: 'CubeSat & Small Satellites', href: '#portals' },
+  { title: 'Navigation Satellites', href: '#/navigation-systems' },
+  { title: 'Communication Satellites', href: '#/communication' },
+  { title: 'Meteorological & Environmental Satellites', href: '#/meteorological' },
+  { title: 'Space Science Satellites', href: '#/space-science' },
+  { title: 'Human Spaceflight Satellites', href: '#/human-spaceflight' },
+  { title: 'CubeSat & Small Satellites', href: '#/cubesat' },
 ]
 
-const HERO_MESSAGES = [
-  'Track the spacecraft, satellites and missions shaping our presence in orbit.',
-  'Explore Earth observation systems that help us understand our changing planet.',
-  'Follow navigation, communication and weather constellations around Earth.',
-  'Discover the science, exploration and human missions reaching beyond our planet.',
-  'Use live orbital data to see what is overhead from any location on Earth.',
-]
+const HERO_MESSAGE = 'Explore the satellites that watch Earth, guide our movements, and connect our world in real time.'
 
 export default function Hero() {
-  const [messageIndex, setMessageIndex] = useState(0)
   const linksRef = useRef(null)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setMessageIndex((current) => (current + 1) % HERO_MESSAGES.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [])
 
   useEffect(() => {
     function closeMenus(event) {
@@ -48,7 +34,7 @@ export default function Hero() {
       <div className="hero-title">
        
         <h1><span className="title-reflection">N</span>CGSA<br /><em><span className="title-reflection">S</span>PACECRAFT</em> <br /><span className="title-reflection">O</span>BSERVATORY</h1>
-        <p className="lead hero-message" key={messageIndex} aria-live="polite">{HERO_MESSAGES[messageIndex]}</p>
+        <p className="lead hero-message" aria-live="polite">{HERO_MESSAGE}</p>
       </div>
       <div className="hero-earth" role="img" aria-label="Earth beneath a satellite-filled night sky" />
     </section>

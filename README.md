@@ -1,4 +1,4 @@
-# NSO — NCGSA Spacecraft Observatory
+# ORBITAL — NCGSA Spacecraft Observatory
 
 v3: proper React frontend (components, no per-portal stock photos) + a Python
 backend that does real orbital-mechanics calculations, not just data passthrough.

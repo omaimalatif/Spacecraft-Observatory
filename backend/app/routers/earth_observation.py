@@ -18,10 +18,18 @@ from cachetools import TTLCache
 from fastapi import APIRouter, HTTPException, Query
 
 from app.services import gibs
-from app.services.celestrak import fetch_group_json, fetch_group_tle
+from app.services.celestrak import fetch_group_json, fetch_group_tle, fetch_object_tle
 from app.services.eo_taxonomy import HAZARD_FOCUS_LABELS, classify_hazard_focus
 from app.services.firms import FirmsNotConfigured, fetch_fires, is_configured
-from app.services.orbital import classify_regime, propagate_subpoints
+from app.services.orbital import (
+    classify_regime,
+    compute_orbit_path,
+    compute_orbit_paths_batch,
+    compute_sky_track,
+    compute_sky_tracks_batch,
+    compute_visible,
+    propagate_subpoints,
+)
 from app.services.satcat import fetch_onorbit as fetch_satcat_onorbit
 from app.services.satcat_taxonomy import classify_ops_status
 
@@ -164,6 +172,190 @@ async def eo_globe_objects():
     return await _eo_globe_objects()
 
 
+# --- Sky plotting / map-click availability (same pattern as Portals 03-08) --
+def _norad_from_tle(rec: dict) -> int | None:
+    try:
+        return int(rec["line1"][2:7])
+    except (ValueError, IndexError, KeyError, TypeError):
+        return None
+
+
+async def _fetch_all_eo_tle() -> list[dict]:
+    """TLE records across both EO groups (resource + weather), deduplicated
+    by NORAD ID. Only two groups, so — like the existing globe-objects
+    fetch above — these are fetched concurrently rather than paced
+    sequentially (the sequential/paced approach elsewhere in this app is for
+    portals fetching many more groups at once, e.g. Communication's eight)."""
+    fetched = await asyncio.gather(*(_fetch_group_tle_safe(g) for g in EO_GROUPS))
+    seen: set[int] = set()
+    records: list[dict] = []
+    for group_records in fetched:
+        for rec in group_records:
+            norad_id = _norad_from_tle(rec)
+            if norad_id is None or norad_id in seen:
+                continue
+            seen.add(norad_id)
+            records.append(rec)
+    return records
+
+
+_orbit_paths_cache = TTLCache(maxsize=2, ttl=300)
+
+
+@router.get("/orbit-paths")
+async def orbit_paths():
+    cache_key = "eo_orbit_paths"
+    if cache_key in _orbit_paths_cache:
+        return _orbit_paths_cache[cache_key]
+
+    tle_records = await _fetch_all_eo_tle()
+    hazard_by_norad = {n: classify_hazard_focus(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
+    by_norad_tle = {n: rec for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
+
+    paths = compute_orbit_paths_batch(tle_records)
+    objects = []
+    for norad_id, entry in paths.items():
+        rec = by_norad_tle.get(norad_id)
+        if not rec:
+            continue
+        objects.append({
+            "norad_id": norad_id,
+            "name": rec["name"],
+            "hazard_focus": hazard_by_norad.get(norad_id, "General Earth Observation"),
+            "period_min": entry["period_min"],
+            "path": entry["path"],
+        })
+
+    result = {
+        "computed_at": datetime.now(timezone.utc).isoformat(),
+        "source": EO_SOURCE + " — one full orbital period per satellite",
+        "count": len(objects),
+        "objects": objects,
+    }
+    _orbit_paths_cache[cache_key] = result
+    return result
+
+
+@router.get("/availability")
+async def availability(
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    min_elevation_deg: float = Query(10, ge=0, le=90),
+):
+    tle_records = await _fetch_all_eo_tle()
+    hazard_by_norad = {n: classify_hazard_focus(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
+
+    visible = compute_visible(tle_records, lat, lon, min_elevation_deg=min_elevation_deg, limit=500)
+    by_category: dict[str, int] = {}
+    for sat in visible:
+        sat["category"] = hazard_by_norad.get(sat["norad_id"], "General Earth Observation")
+        by_category[sat["category"]] = by_category.get(sat["category"], 0) + 1
+
+    return {
+        "location": {"lat": lat, "lon": lon},
+        "min_elevation_deg": min_elevation_deg,
+        "visible_count": len(visible),
+        "catalog_size": len(tle_records),
+        "by_category": by_category,
+        "satellites": visible,
+        "source": EO_SOURCE + ", computed at request time",
+    }
+
+
+@router.get("/sky-track/{norad_id}")
+async def sky_track(
+    norad_id: int,
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    elevation_m: float = Query(0),
+    window_min: int = Query(60, ge=5, le=180),
+):
+    try:
+        tle = await fetch_object_tle(norad_id)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"Could not reach CelesTrak: {exc}") from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    if tle is None:
+        raise HTTPException(status_code=404, detail="No propagatable elements for this object (decayed, or not in CelesTrak's free GP feed).")
+
+    track = compute_sky_track(tle["line1"], tle["line2"], tle["name"], lat, lon, elevation_m, window_min=window_min)
+    return {
+        "norad_id": norad_id,
+        "name": tle["name"],
+        "category": classify_hazard_focus(tle["name"]),
+        "window_min": window_min,
+        "track": track,
+        "source": "CelesTrak resource/weather groups + Skyfield SGP4, computed at request time",
+    }
+
+
+@router.get("/sky-tracks")
+async def sky_tracks(
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    min_elevation_deg: float = Query(10, ge=0, le=90),
+    elevation_m: float = Query(0),
+    window_min: int = Query(25, ge=5, le=90),
+):
+    tle_records = await _fetch_all_eo_tle()
+    hazard_by_norad = {n: classify_hazard_focus(rec["name"]) for rec in tle_records if (n := _norad_from_tle(rec)) is not None}
+
+    visible = compute_visible(tle_records, lat, lon, min_elevation_deg=min_elevation_deg, limit=500)
+    visible_norad_ids = {sat["norad_id"] for sat in visible}
+    visible_tle_records = [rec for rec in tle_records if _norad_from_tle(rec) in visible_norad_ids]
+
+    tracks = compute_sky_tracks_batch(visible_tle_records, lat, lon, elevation_m, window_min=window_min)
+    return {
+        "location": {"lat": lat, "lon": lon},
+        "window_min": window_min,
+        "tracks": {
+            str(norad_id): {"category": hazard_by_norad.get(norad_id, "General Earth Observation"), "points": points}
+            for norad_id, points in tracks.items()
+        },
+        "source": EO_SOURCE + ", computed at request time",
+    }
+
+
+# --- Static reference data: published context, NOT live telemetry ----------
+SERVICE_INFO = [
+    {
+        "category": "Fire Detection", "full_name": "Fire Detection",
+        "description": "Satellites carrying the MODIS and VIIRS instruments that NASA FIRMS itself draws active-fire and thermal-anomaly detections from.",
+        "example_missions": ["Terra", "Aqua", "Suomi NPP", "NOAA-20", "NOAA-21"],
+        "source": "NASA FIRMS", "source_url": "https://firms.modaps.eosdis.nasa.gov/",
+    },
+    {
+        "category": "Storm & Weather Tracking", "full_name": "Storm & Weather Tracking",
+        "description": "Geostationary and polar-orbiting weather satellites used for storm tracking, cloud imagery and numerical weather prediction.",
+        "example_missions": ["GOES", "Meteosat / MTG", "Himawari", "Fengyun", "Metop"],
+        "source": "NOAA / EUMETSAT", "source_url": "https://www.nesdis.noaa.gov/",
+    },
+    {
+        "category": "Flood & Precipitation Monitoring", "full_name": "Flood & Precipitation Monitoring",
+        "description": "Radar and microwave satellites used for precipitation measurement, soil moisture and flood-extent mapping.",
+        "example_missions": ["GPM", "Sentinel-1", "SMAP", "SWOT", "ICEYE"],
+        "source": "NASA / ESA Copernicus", "source_url": "https://gpm.nasa.gov/",
+    },
+    {
+        "category": "General Earth Observation", "full_name": "General Earth Observation",
+        "description": "Catalogued by CelesTrak under its resource or weather groups but not confidently matched to a specific hazard-focus mission pattern above.",
+        "example_missions": [],
+        "source": "CelesTrak", "source_url": "https://celestrak.org/",
+    },
+]
+
+
+@router.get("/service-info")
+def service_info():
+    return {
+        "categories": SERVICE_INFO,
+        "is_static_reference_data": True,
+        "note": "General mission-family context from public agency pages — not live telemetry. Live satellite counts and positions come from /types, /satellites and /globe-objects instead.",
+    }
+
+
 @router.get("/types")
 async def eo_types():
     """Hazard-focus breakdown: how many EO satellites are primarily used for
@@ -244,12 +436,20 @@ async def fires(
 
 
 @router.get("/satellites")
-async def satellites():
+async def satellites(
+    category: str | None = Query(None, description="Filter by hazard focus, e.g. 'Fire Detection'"),
+    q: str | None = Query(None, min_length=1, max_length=80, description="Free-text search over satellite name"),
+    limit: int = Query(500, le=2000),
+):
     """
     Earth-observation satellite count from CelesTrak's public GP groups that
     map to EO missions (resource + weather). This is an indicative subset of
     CelesTrak's own categorization, not a complete or authoritative EO census
     — a full count would need a mission-registry source (e.g. WMO OSCAR).
+
+    Also supports searching/filtering the live catalog (q / category / limit)
+    for the portal's satellite-search box, same as the other satellite-
+    tracking portals.
     """
     try:
         resource, weather = await asyncio.gather(
@@ -261,10 +461,20 @@ async def satellites():
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
+    data = await _eo_globe_objects()
+    shaped = [{**o, "category": o["hazard_focus"]} for o in data["objects"]]
+    if category:
+        shaped = [s for s in shaped if s["category"].lower() == category.lower()]
+    if q:
+        needle = q.strip().lower()
+        shaped = [s for s in shaped if needle in str(s["name"] or "").lower() or needle in str(s["norad_id"] or "")]
+
     return {
         "earth_resources_satellites": len(resource),
         "weather_satellites": len(weather),
         "total": len(resource) + len(weather),
+        "count": len(shaped),
+        "satellites": shaped[:limit],
         "source": "CelesTrak GP catalog (GROUP=resource, GROUP=weather)",
         "note": "Indicative subset of CelesTrak's categorization, not a complete EO satellite census.",
     }

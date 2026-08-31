@@ -1,33 +1,15 @@
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
-const REQUEST_TIMEOUT_MS = 25000 // a stalled backend/upstream call fails cleanly instead of hanging the UI forever
 
-async function fetchWithTimeout(url) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
-  try {
-    return await fetch(url, { signal: controller.signal })
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
-async function get(path, { retry = true } = {}) {
+async function get(path) {
   let res
   try {
-    res = await fetchWithTimeout(`${API_BASE}${path}`)
+    res = await fetch(`${API_BASE}${path}`)
   } catch (err) {
-    // Network failure or timeout — retry once (covers a transient blip)
-    // before surfacing an error, since a single dropped request shouldn't
-    // make an otherwise-working backend look "blocked".
-    if (retry) return get(path, { retry: false })
-    const reason = err.name === 'AbortError' ? `timed out after ${REQUEST_TIMEOUT_MS / 1000}s` : err.message
-    throw new Error(`Could not reach the backend at ${API_BASE}${path} — is it running? (${reason})`)
+    // fetch itself throws on network failure (backend not running, wrong
+    // port, actual CORS block) — distinguish that from a backend error reply
+    throw new Error(`Could not reach the backend at ${API_BASE}${path} — is it running? (${err.message})`)
   }
   if (!res.ok) {
-    // 502/503/504 are frequently transient (upstream rate-limited a single
-    // request) — one retry avoids surfacing a failure the very next request
-    // would have avoided.
-    if (retry && [502, 503, 504].includes(res.status)) return get(path, { retry: false })
     let detail = res.statusText
     try {
       const body = await res.json()
@@ -81,10 +63,24 @@ export const api = {
   earthObservationEvents: () => get('/api/earth-observation/events'),
   earthObservationLayers: () => get('/api/earth-observation/layers'),
   earthObservationFires: (bbox = 'world') => get(`/api/earth-observation/fires?bbox=${encodeURIComponent(bbox)}`),
-  earthObservationSatellites: () => get('/api/earth-observation/satellites'),
+  earthObservationSatellites: ({ category, q, limit = 500 } = {}) => {
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (q) params.set('q', q)
+    if (limit) params.set('limit', limit)
+    return get(`/api/earth-observation/satellites?${params.toString()}`)
+  },
   earthObservationStatus: () => get('/api/earth-observation/status'),
   earthObservationGlobeObjects: () => get('/api/earth-observation/globe-objects'),
   earthObservationTypes: () => get('/api/earth-observation/types'),
+  earthObservationOrbitPaths: () => get('/api/earth-observation/orbit-paths'),
+  earthObservationAvailability: ({ lat, lon, minElevation = 10 }) =>
+    get(`/api/earth-observation/availability?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}`),
+  earthObservationServiceInfo: () => get('/api/earth-observation/service-info'),
+  earthObservationSkyTrack: (noradId, { lat, lon, windowMin = 60 }) =>
+    get(`/api/earth-observation/sky-track/${noradId}?lat=${lat}&lon=${lon}&window_min=${windowMin}`),
+  earthObservationSkyTracks: ({ lat, lon, minElevation = 10, windowMin = 25 }) =>
+    get(`/api/earth-observation/sky-tracks?lat=${lat}&lon=${lon}&min_elevation_deg=${minElevation}&window_min=${windowMin}`),
   spaceScienceSolarSystem: () => get('/api/space-science/solar-system'),
   spaceScienceSpacecraft: () => get('/api/space-science/spacecraft'),
   spaceScienceNeo: (days = 7) => get(`/api/space-science/neo?days=${days}`),

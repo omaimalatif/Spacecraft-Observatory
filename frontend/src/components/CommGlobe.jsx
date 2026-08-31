@@ -431,16 +431,6 @@ export default function CommGlobe({ selected, onSelect, presets: presetsProp, lo
                   <option value="" disabled>{location?.label || (location ? `${location.lat.toFixed(2)}°, ${location.lon.toFixed(2)}°` : 'Choose a location…')}</option>
                   {presets.map((p) => <option key={p.label} value={p.label}>{p.label}</option>)}
                 </select>
-                <div className="mask-control">
-                  <label>Mask
-                    <input
-                      type="number" min="0" max="90" value={maskInput}
-                      onChange={(e) => setMaskInput(e.target.value)}
-                      onBlur={(e) => applyMask(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && applyMask(e.target.value)}
-                    />°
-                  </label>
-                </div>
               </div>
             )}
           </div>

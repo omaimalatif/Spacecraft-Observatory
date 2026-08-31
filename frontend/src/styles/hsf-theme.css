@@ -96,7 +96,7 @@
 }
 
 /* --- Live ISS position / crew roster strip (Open Notify) --- */
-.hsf-page .crew-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.hsf-page .crew-strip { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 16px; }
 .hsf-page .crew-card { padding: 16px 18px; }
 .hsf-page .crew-card h3 { font-size: 15px; margin: 4px 0 10px; color: #ffedd1; }
 .hsf-page .crew-card-grid { display: flex; gap: 22px; flex-wrap: wrap; }

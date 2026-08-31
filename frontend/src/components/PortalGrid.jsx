@@ -12,27 +12,27 @@ const PORTALS = [
     desc: 'See which satellites are watching Earth for hazards — live 3D orbital positions of the spacecraft that detect fires, storms, floods and other events.',
   },
   {
-    color: '#E68FBF', title: 'Navigation Systems',
+    color: '#E68FBF', title: 'Navigation Satellites',
     href: '#/navigation-systems',
     desc: 'Understand the GPS-like satellite networks that make positioning and timing possible worldwide, including which constellations are visible from your part of the globe right now.',
   },
   {
-    color: '#FFB454', title: 'Communication',
+    color: '#FFB454', title: 'Communication Satellites',
     href: '#/communication',
     desc: 'Explore the satellites that carry phone calls, internet, TV, and data across the planet — from geostationary giants to fast-growing broadband constellations in low orbit.',
   },
   {
-    color: '#C9A227', title: 'Meteorological & Environmental',
+    color: '#C9A227', title: 'Meteorological & Environmental Satellites',
     href: '#/meteorological',
     desc: 'Follow the missions that forecast the weather and monitor the environment, from daily storm tracking to long-term climate and pollution measurements from space.',
   },
   {
-    color: '#E68FBF', title: 'Live Space Science Tracking',
+    color: '#E68FBF', title: 'Space Science Satellites',
     href: '#/space-science',
     desc: 'Meet the telescopes, probes, and observatories reaching beyond Earth — studying distant galaxies, other planets, and the origins of the universe itself.',
   },
   {
-    color: '#FFB454',  title: 'Human Spaceflight',
+    color: '#FFB454',  title: 'Human Spaceflight Satellites',
     href: '#/human-spaceflight',
     desc: 'Track the crewed missions and orbital stations that keep people living and working in space, along with the astronauts and vehicles that support them.',
   },

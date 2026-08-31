@@ -243,12 +243,17 @@ export default function HumanSpaceflightDashboard() {
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
 
-  // Real-time ISS position + current crew roster — Open Notify, the same
-  // small live feed already used elsewhere in the app. Polled independently
-  // of the SGP4 catalog data above so a slow/failed CelesTrak fetch never
-  // blocks this from showing.
+  // Real-time ISS position — Open Notify, the same small live feed already
+  // used elsewhere in the app. Polled independently of the SGP4 catalog data
+  // above so a slow/failed CelesTrak fetch never blocks this from showing.
+  //
+  // Deliberately NOT showing a "who's currently in space" crew roster here:
+  // Open Notify's astros.json is, by its own maintainer's description,
+  // manually updated "personally as launches and landings occur" with no
+  // official source behind it — it can lag real crew changes for weeks.
+  // Displaying that as if it were live, current data would be misleading,
+  // so it's left out rather than shown with a caveat nobody would read.
   const [issNow, setIssNow] = useState(null)
-  const [people, setPeople] = useState(null)
   useEffect(() => {
     let cancelled = false
     function pollIss() {
@@ -258,7 +263,6 @@ export default function HumanSpaceflightDashboard() {
     const id = setInterval(pollIss, 10000)
     return () => { cancelled = true; clearInterval(id) }
   }, [])
-  useEffect(() => { api.peopleInSpace().then(setPeople).catch(() => {}) }, [])
 
   // Observer location is owned at the portal level and shared by the Cesium
   // 3D view and the availability map/sky-plot below, so picking a place in
@@ -333,15 +337,6 @@ export default function HumanSpaceflightDashboard() {
             </div>
           ) : <p className="loading-hint">Fetching current ISS position…</p>}
         </article>
-        <article className="panel crew-card">
-          <p className="eyebrow">LIVE — OPEN NOTIFY</p>
-          <h3>{people ? `${people.number} people currently in space` : 'People currently in space'}</h3>
-          {people ? (
-            <div className="crew-list">
-              {people.people.map((p) => <span key={p.name}>{p.name} <small>· {p.craft}</small></span>)}
-            </div>
-          ) : <p className="loading-hint">Fetching current crew roster…</p>}
-        </article>
       </section>
 
       <section className="command-grid">
@@ -408,7 +403,7 @@ export default function HumanSpaceflightDashboard() {
       <footer className="assets-footer">
         Data attribution: <a href="https://celestrak.org/" target="_blank" rel="noreferrer">CelesTrak GP data</a> (GROUP=stations; family labels derived by name-pattern within that group) ·
         Reference specs: NASA, China Manned Space Agency, Roscosmos and Northrop Grumman official sites ·
-        Real-time ISS position & current crew roster (Open Notify) shown below ·
+        Real-time ISS position (Open Notify) shown above · A "currently in space" crew roster is deliberately not shown — Open Notify's astros.json is manually maintained with no official source behind it and can lag real crew changes for weeks ·
         Live data is cached server-side for up to 5 minutes. Values marked "Data unavailable" require a compatible authoritative source connection.
       </footer>
     </main>

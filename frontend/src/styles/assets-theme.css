@@ -19,9 +19,11 @@
 .cesium-overlay{position:absolute;z-index:5;pointer-events:none}
 .cesium-overlay > *{pointer-events:auto}
 .cesium-legend{top:12px;left:12px;display:flex;gap:8px;flex-wrap:wrap}
-.cesium-regime-row{top:48px;left:12px;display:flex;gap:6px;flex-wrap:wrap;max-width:70%}
-.cesium-controls{display:flex;flex-direction:column;gap:6px;max-width:78%}
-.cesium-chip-row{display:flex;gap:6px;flex-wrap:wrap}
+.cesium-regime-row{top:48px;left:12px;right:12px;display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;max-width:calc(100% - 24px);align-items:center;padding-right:6px}
+.cesium-regime-row .legend{flex:0 0 auto}
+.cesium-controls{display:flex;flex-direction:column;gap:6px;max-width:calc(100% - 110px)}
+.cesium-chip-row{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;align-items:center}
+.cesium-chip-row > *{flex:0 0 auto}
 .cesium-toggle-row .toggle-pill{background:rgba(5,13,18,.72)}
 .regime-chip{font-size:10px;padding:6px 10px;opacity:1;border:1px solid rgba(187,222,240,.28);border-radius:2px;background:rgba(5,13,18,.82);color:#d7eaf2;box-shadow:0 4px 14px rgba(0,0,0,.2);transition:background .2s,border-color .2s,opacity .2s,transform .2s}.regime-chip::before{width:6px;height:6px;margin-right:6px}.regime-chip:hover{transform:translateY(-1px);border-color:#d7f7ff;background:rgba(20,47,60,.94)}.regime-chip.off{opacity:.3;box-shadow:none}.regime-leo{border-color:rgba(98,214,255,.5)}.regime-meo{border-color:rgba(255,180,84,.7);color:#ffd39c}.regime-geo{border-color:rgba(143,227,199,.65);color:#b9f3df}.regime-heo{border-color:rgba(230,143,191,.7);color:#f4b8da}.regime-unknown{border-color:rgba(170,184,194,.42);color:#b6c2c9}.debris-dot{border-color:rgba(255,174,94,.7)!important;color:#ffd29d!important;background:rgba(255,174,94,.1)!important}.debris-dot:hover{background:rgba(255,174,94,.2)!important;border-color:#ffbe73!important}
 .cesium-legend .legend,.cesium-orbit-btn .legend{font:10px 'JetBrains Mono';letter-spacing:.2px;padding:8px 12px;border:1px solid rgba(187,222,240,.42);border-radius:7px;background:rgba(5,13,18,.9);color:#d9edf4;box-shadow:0 5px 16px rgba(0,0,0,.3);cursor:pointer;opacity:1;transition:background .2s,border-color .2s,color .2s,opacity .2s,transform .2s}.cesium-legend .legend:hover,.cesium-orbit-btn .legend:hover{transform:translateY(-1px);background:rgba(18,43,55,.96);border-color:#d7f7ff;color:#f3fcff}.cesium-legend .active-dot{border-color:rgba(98,214,255,.72);color:#bcefff;background:rgba(98,214,255,.1)}.cesium-legend .active-dot:hover{background:rgba(98,214,255,.2);border-color:#79dfff}.cesium-legend .legend.off{opacity:.35}.cesium-orbit-btn .legend{border-color:rgba(201,162,39,.8);color:#f0d896;background:rgba(201,162,39,.12)}.cesium-orbit-btn .legend:hover{background:rgba(201,162,39,.24);border-color:#f0d896;color:#fff3c7}.cesium-orbit-btn .legend:disabled{cursor:wait;opacity:.65;transform:none}

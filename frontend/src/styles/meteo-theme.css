@@ -15,6 +15,18 @@
 .meteo-page .cesium-orbit-btn .legend { border-color: #C9A227; }
 .meteo-page .cesium-title { color: #f3e6b8; }
 .meteo-page .cesium-cam-controls .skyplot-action { padding: 5px 10px; font-size: 9px; }
+.meteo-page .cesium-controls { max-width: 100%; gap: 4px; }
+.meteo-page .cesium-chip-row { gap: 4px; }
+.meteo-page .cesium-chip-row .legend,
+.meteo-page .cesium-chip-row .toggle-pill,
+.meteo-page .cesium-chip-row .regime-chip,
+.meteo-page .cesium-chip-row button,
+.meteo-page .cesium-mode-row button,
+.meteo-page .cesium-orbit-frame button { padding: 4px 7px; font-size: 8.5px; }
+.meteo-page .skyplot-mode-toggle { gap: 3px; }
+.meteo-page .skyplot-mode-toggle button { padding: 4px 7px; font-size: 8.5px; }
+.meteo-page .cesium-location-picker { gap: 6px; }
+.meteo-page .cesium-location-select { padding: 4px 8px; font-size: 9px; min-height: 24px; }
 
 /* --- Compact command view (mirrors .nav-page) --- */
 .meteo-page .assets-intro { padding: 30px 0 22px; }
